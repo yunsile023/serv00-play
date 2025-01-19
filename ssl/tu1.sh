@@ -107,14 +107,15 @@ for PORT in "${PORTS[@]}"; do
     echo -e "\e[1;32mInstance running on port $PORT\e[0m"
 done
 
-# Check port status
+# Check UDP port status
 for PORT in "${PORTS[@]}"; do
-    nc -zv 127.0.0.1 $PORT
+    timeout 2 bash -c "echo > /dev/udp/127.0.0.1/$PORT" 2>/dev/null
     if [ $? -eq 0 ]; then
-        echo -e "\e[1;32mPort $PORT is running successfully.\e[0m"
+        echo -e "\e[1;32mUDP Port $PORT is running successfully.\e[0m"
     else
-        echo -e "\e[1;31mPort $PORT failed to start. Check logs.\e[0m"
+        echo -e "\e[1;31mUDP Port $PORT failed to start. Check logs.\e[0m"
     fi
+
 done
 
 echo -e "\e[1;32mAll instances are running successfully!\e[0m"
