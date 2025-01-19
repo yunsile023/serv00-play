@@ -108,4 +108,3 @@ for PORT in "${PORTS[@]}"; do
 done
 
 echo -e "\e[1;32mAll instances are running successfully!\e[0m"
-exit 0
