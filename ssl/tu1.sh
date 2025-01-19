@@ -103,11 +103,11 @@ done
 
 # Run multiple instances
 for PORT in "${PORTS[@]}"; do
-    nohup ./${FILE_MAP[web]} -c "config_$PORT.json" >/dev/null 2>&1 &
+    nohup ./${FILE_MAP[web]} -c "config_$PORT.json" >$WORKDIR/log_tuic_$PORT.log 2>&1 &
     echo -e "\e[1;32mInstance running on port $PORT\e[0m"
 done
 
-echo -e "\e[1;32mAll instances are running successfully!\e[0m"
+# Check port status
 for PORT in "${PORTS[@]}"; do
     nc -zv 127.0.0.1 $PORT
     if [ $? -eq 0 ]; then
@@ -116,3 +116,5 @@ for PORT in "${PORTS[@]}"; do
         echo -e "\e[1;31mPort $PORT failed to start. Check logs.\e[0m"
     fi
 done
+
+echo -e "\e[1;32mAll instances are running successfully!\e[0m"
