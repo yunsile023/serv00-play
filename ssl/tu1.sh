@@ -5,7 +5,7 @@ export NEZHA_SERVER=${NEZHA_SERVER:-''}
 export NEZHA_PORT=${NEZHA_PORT:-'5555'}            
 export NEZHA_KEY=${NEZHA_KEY:-''}
 export PASSWORD=${PASSWORD:-'admin'}
-PORTS=(36841 36842 	41170)  # 定义三个端口
+PORTS=(36841 36842 41170)  # 定义三个端口
 USERNAME=$(whoami)
 HOSTNAME=$(hostname)
 
@@ -24,6 +24,8 @@ else
     echo "Unsupported architecture: $ARCH"
     exit 1
 fi
+
+# Download and configure tuic server
 declare -A FILE_MAP
 generate_random_name() {
     local chars=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890
@@ -98,7 +100,6 @@ cat > "config_$PORT.json" <<EOL
 EOL
 
 echo -e "\e[1;32mGenerated config_$PORT.json\e[0m"
-
 done
 
 # Run multiple instances
@@ -115,7 +116,13 @@ for PORT in "${PORTS[@]}"; do
     else
         echo -e "\e[1;31mUDP Port $PORT failed to start. Check logs.\e[0m"
     fi
+done
 
+# Output links for V2RayN
+for PORT in "${PORTS[@]}"; do
+    V2RAY_LINK="tuic://$UUID@$HOSTNAME:$PORT?encryption=aes-128-gcm&alpn=h3&password=$PASSWORD"
+    echo -e "\e[1;32mYou can copy the following link to V2RayN for port $PORT:\e[0m"
+    echo -e "\e[1;32m$V2RAY_LINK\e[0m"
 done
 
 echo -e "\e[1;32mAll instances are running successfully!\e[0m"
