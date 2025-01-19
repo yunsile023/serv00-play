@@ -5,7 +5,7 @@ export NEZHA_SERVER=${NEZHA_SERVER:-''}
 export NEZHA_PORT=${NEZHA_PORT:-'5555'}            
 export NEZHA_KEY=${NEZHA_KEY:-''}
 export PASSWORD=${PASSWORD:-'admin'}
-PORTS=(36841 36842 36843)  # 定义三个端口
+PORTS=(36841 36842 	41170)  # 定义三个端口
 USERNAME=$(whoami)
 HOSTNAME=$(hostname)
 
