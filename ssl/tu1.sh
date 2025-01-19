@@ -120,9 +120,10 @@ done
 
 # Output links for V2RayN
 for PORT in "${PORTS[@]}"; do
-    V2RAY_LINK="tuic://$UUID@$HOSTNAME:$PORT?encryption=aes-128-gcm&alpn=h3&password=$PASSWORD"
+    V2RAY_LINK="tuic://$UUID%3A$PASSWORD@$HOSTNAME:$PORT?sni=www.bing.com&alpn=h3&congestion_control=bbr#PL-${HOSTNAME}-tuic"
     echo -e "\e[1;32mYou can copy the following link to V2RayN for port $PORT:\e[0m"
     echo -e "\e[1;32m$V2RAY_LINK\e[0m"
 done
+
 
 echo -e "\e[1;32mAll instances are running successfully!\e[0m"
