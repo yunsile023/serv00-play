@@ -1,0 +1,878 @@
+port: 7890
+allow-lan: true
+mode: rule
+log-level: info
+unified-delay: true
+global-client-fingerprint: chrome
+dns:
+  enable: true
+  listen: :53
+  ipv6: true
+  enhanced-mode: fake-ip
+  fake-ip-range: 198.18.0.1/16
+  default-nameserver:
+    - 223.5.5.5
+    - 8.8.8.8
+  nameserver:
+    - https://dns.alidns.com/dns-query
+    - https://doh.pub/dns-query
+  fallback:
+    - https://1.0.0.1/dns-query
+    - tls://dns.google
+  fallback-filter:
+    geoip: true
+    geoip-code: CN
+    ipcidr:
+      - 240.0.0.0/4
+
+proxies:
+  - name: vless-reality-vision-g-us-free
+    type: vless
+    server: 35.212.178.58
+    port: 14728
+    uuid: c2c2eaaa-5c49-48f1-8c3a-695e37c33193
+    network: tcp
+    udp: true
+    tls: true
+    flow: xtls-rprx-vision
+    servername: www.yahoo.com
+    reality-opts:
+      public-key: fc_XFpOkF8xvhQQ6yKaaQ-fTMErIdRAzvhosopy17BQ
+      short-id: 88c4b660
+    client-fingerprint: chrome
+
+  - name: vmess-ws-g-us-free
+    type: vmess
+    server: 35.212.178.58
+    port: 2082
+    uuid: c2c2eaaa-5c49-48f1-8c3a-695e37c33193
+    alterId: 0
+    cipher: auto
+    udp: true
+    tls: false
+    network: ws
+    servername: www.bing.com
+    ws-opts:
+      path: "c2c2eaaa-5c49-48f1-8c3a-695e37c33193-vm"
+      headers:
+        Host: www.bing.com
+
+  - name: hysteria2-g-us-free
+    type: hysteria2
+    server: 35.212.178.58
+    port: 16096
+    password: c2c2eaaa-5c49-48f1-8c3a-695e37c33193
+    alpn:
+      - h3
+    sni: www.bing.com
+    skip-cert-verify: true
+    fast-open: true
+
+  - name: hysteria2-g-us-free1
+    type: hysteria2
+    server: 35.212.178.58
+    port: 16097
+    password: c2c2eaaa-5c49-48f1-8c3a-695e37c33193
+    alpn:
+      - h3
+    sni: www.bing.com
+    skip-cert-verify: true
+    fast-open: true
+
+  - name: hysteria2-g-us-free2
+    type: hysteria2
+    server: 35.212.178.58
+    port: 16098
+    password: c2c2eaaa-5c49-48f1-8c3a-695e37c33193
+    alpn:
+      - h3
+    sni: www.bing.com
+    skip-cert-verify: true
+    fast-open: true
+
+  - name: hysteria2-g-us-free3
+    type: hysteria2
+    server: 35.212.178.58
+    port: 16099
+    password: c2c2eaaa-5c49-48f1-8c3a-695e37c33193
+    alpn:
+      - h3
+    sni: www.bing.com
+    skip-cert-verify: true
+    fast-open: true
+
+  - name: hysteria2-g-us-free4
+    type: hysteria2
+    server: 35.212.178.58
+    port: 16100
+    password: c2c2eaaa-5c49-48f1-8c3a-695e37c33193
+    alpn:
+      - h3
+    sni: www.bing.com
+    skip-cert-verify: true
+    fast-open: true
+
+  - name: hysteria2-g-us-free5
+    type: hysteria2
+    server: 35.212.178.58
+    port: 16101
+    password: c2c2eaaa-5c49-48f1-8c3a-695e37c33193
+    alpn:
+      - h3
+    sni: www.bing.com
+    skip-cert-verify: true
+    fast-open: true
+
+  - name: tuic5-g-us-free
+    server: 35.212.178.58
+    port: 33810
+    type: tuic
+    uuid: c2c2eaaa-5c49-48f1-8c3a-695e37c33193
+    password: c2c2eaaa-5c49-48f1-8c3a-695e37c33193
+    alpn: [h3]
+    disable-sni: true
+    reduce-rtt: true
+    udp-relay-mode: native
+    congestion-controller: bbr
+    sni: www.bing.com
+
+  - name: tuic5-g-us-free1
+    server: 35.212.178.58
+    port: 33811
+    type: tuic
+    uuid: c2c2eaaa-5c49-48f1-8c3a-695e37c33193
+    password: c2c2eaaa-5c49-48f1-8c3a-695e37c33193
+    alpn: [h3]
+    disable-sni: true
+    reduce-rtt: true
+    udp-relay-mode: native
+    congestion-controller: bbr
+    sni: www.bing.com
+
+  - name: tuic5-g-us-free2
+    server: 35.212.178.58
+    port: 33812
+    type: tuic
+    uuid: c2c2eaaa-5c49-48f1-8c3a-695e37c33193
+    password: c2c2eaaa-5c49-48f1-8c3a-695e37c33193
+    alpn: [h3]
+    disable-sni: true
+    reduce-rtt: true
+    udp-relay-mode: native
+    congestion-controller: bbr
+    sni: www.bing.com
+
+  - name: tuic5-g-us-free3
+    server: 35.212.178.58
+    port: 33813
+    type: tuic
+    uuid: c2c2eaaa-5c49-48f1-8c3a-695e37c33193
+    password: c2c2eaaa-5c49-48f1-8c3a-695e37c33193
+    alpn: [h3]
+    disable-sni: true
+    reduce-rtt: true
+    udp-relay-mode: native
+    congestion-controller: bbr
+    sni: www.bing.com
+
+  - name: tuic5-g-us-free4
+    server: 35.212.178.58
+    port: 33814
+    type: tuic
+    uuid: c2c2eaaa-5c49-48f1-8c3a-695e37c33193
+    password: c2c2eaaa-5c49-48f1-8c3a-695e37c33193
+    alpn: [h3]
+    disable-sni: true
+    reduce-rtt: true
+    udp-relay-mode: native
+    congestion-controller: bbr
+    sni: www.bing.com
+
+  - name: tuic5-g-us-free5
+    server: 35.212.178.58
+    port: 33815
+    type: tuic
+    uuid: c2c2eaaa-5c49-48f1-8c3a-695e37c33193
+    password: c2c2eaaa-5c49-48f1-8c3a-695e37c33193
+    alpn: [h3]
+    disable-sni: true
+    reduce-rtt: true
+    udp-relay-mode: native
+    congestion-controller: bbr
+    sni: www.bing.com
+
+  - name: vmess-tls-argo固定-g-us-free
+    type: vmess
+    server: www.visa.com.sg
+    port: 8443
+    uuid: c2c2eaaa-5c49-48f1-8c3a-695e37c33193
+    alterId: 0
+    cipher: auto
+    udp: true
+    tls: true
+    network: ws
+    servername: gggd.wzpy5202.us.kg
+    ws-opts:
+      path: "c2c2eaaa-5c49-48f1-8c3a-695e37c33193-vm"
+      headers:
+        Host: gggd.wzpy5202.us.kg
+
+  - name: vmess-argo固定-g-us-free
+    type: vmess
+    server: www.visa.com.sg
+    port: 8880
+    uuid: c2c2eaaa-5c49-48f1-8c3a-695e37c33193
+    alterId: 0
+    cipher: auto
+    udp: true
+    tls: false
+    network: ws
+    servername: gggd.wzpy5202.us.kg
+    ws-opts:
+      path: "c2c2eaaa-5c49-48f1-8c3a-695e37c33193-vm"
+      headers:
+        Host: gggd.wzpy5202.us.kg
+- {
+      name: "[Tuic] 🇵🇱 PL-s15.serv00.com-tuic",
+      server: 188.68.250.202,
+      port: 41170,
+      type: tuic,
+      password: admin,
+      uuid: f77c15fa-a359-4c8d-b43c-ee849917d8d3,
+      sni: www.bing.com,
+      skip-cert-verify: true,
+      alpn: [h3],
+      disable-sni: true,
+      reduce-rtt: false,
+      request-timeout: 15000,
+      udp-relay-mode: native,
+      congestion-controller: bbr,
+    }
+  - {
+      name: "[Tuic] 🇵🇱 PL-s15.serv00.com-tuic 2",
+      server: 188.68.248.8,
+      port: 41170,
+      type: tuic,
+      password: admin,
+      uuid: f77c15fa-a359-4c8d-b43c-ee849917d8d3,
+      sni: www.bing.com,
+      skip-cert-verify: true,
+      alpn: [h3],
+      disable-sni: true,
+      reduce-rtt: false,
+      request-timeout: 15000,
+      udp-relay-mode: native,
+      congestion-controller: bbr,
+    }
+  - {
+      name: "[Tuic] 🇵🇱 PL-s15.serv00.com-tuic 3",
+      server: 188.68.250.201,
+      port: 41170,
+      type: tuic,
+      password: admin,
+      uuid: f77c15fa-a359-4c8d-b43c-ee849917d8d3,
+      sni: www.bing.com,
+      skip-cert-verify: true,
+      alpn: [h3],
+      disable-sni: true,
+      reduce-rtt: false,
+      request-timeout: 15000,
+      udp-relay-mode: native,
+      congestion-controller: bbr,
+    }
+  - {
+      name: "[Tuic] 🇵🇱 PL-s15.serv00.com-tuic 4",
+      server: 188.68.250.202,
+      port: 36842,
+      type: tuic,
+      password: admin,
+      uuid: f77c15fa-a359-4c8d-b43c-ee849917d8d3,
+      sni: www.bing.com,
+      skip-cert-verify: true,
+      alpn: [h3],
+      disable-sni: true,
+      reduce-rtt: false,
+      request-timeout: 15000,
+      udp-relay-mode: native,
+      congestion-controller: bbr,
+    }
+  - {
+      name: "[Tuic] 🇵🇱 PL-s15.serv00.com-tuic 5",
+      server: 188.68.250.202,
+      port: 36841,
+      type: tuic,
+      password: admin,
+      uuid: f77c15fa-a359-4c8d-b43c-ee849917d8d3,
+      sni: www.bing.com,
+      skip-cert-verify: true,
+      alpn: [h3],
+      disable-sni: true,
+      reduce-rtt: false,
+      request-timeout: 15000,
+      udp-relay-mode: native,
+      congestion-controller: bbr,
+    }
+  - {
+      name: "[Tuic] 🇵🇱 PL-s15.serv00.com-tuic 6",
+      server: 188.68.250.201,
+      port: 36842,
+      type: tuic,
+      password: admin,
+      uuid: f77c15fa-a359-4c8d-b43c-ee849917d8d3,
+      sni: www.bing.com,
+      skip-cert-verify: true,
+      alpn: [h3],
+      disable-sni: true,
+      reduce-rtt: false,
+      request-timeout: 15000,
+      udp-relay-mode: native,
+      congestion-controller: bbr,
+    }
+  - {
+      name: "[Tuic] 🇵🇱 PL-s15.serv00.com-tuic 7",
+      server: 188.68.250.201,
+      port: 36841,
+      type: tuic,
+      password: admin,
+      uuid: f77c15fa-a359-4c8d-b43c-ee849917d8d3,
+      sni: www.bing.com,
+      skip-cert-verify: true,
+      alpn: [h3],
+      disable-sni: true,
+      reduce-rtt: false,
+      request-timeout: 15000,
+      udp-relay-mode: native,
+      congestion-controller: bbr,
+    }
+  - {
+      name: "[Tuic] 🇵🇱 PL-s15.serv00.com-tuic 8",
+      server: 188.68.248.8,
+      port: 36842,
+      type: tuic,
+      password: admin,
+      uuid: f77c15fa-a359-4c8d-b43c-ee849917d8d3,
+      sni: www.bing.com,
+      skip-cert-verify: true,
+      alpn: [h3],
+      disable-sni: true,
+      reduce-rtt: false,
+      request-timeout: 15000,
+      udp-relay-mode: native,
+      congestion-controller: bbr,
+    }
+  - {
+      name: "[Tuic] 🇵🇱 PL-s15.serv00.com-tuic 9",
+      server: 188.68.248.8,
+      port: 36841,
+      type: tuic,
+      password: admin,
+      uuid: f77c15fa-a359-4c8d-b43c-ee849917d8d3,
+      sni: www.bing.com,
+      skip-cert-verify: true,
+      alpn: [h3],
+      disable-sni: true,
+      reduce-rtt: false,
+      request-timeout: 15000,
+      udp-relay-mode: native,
+      congestion-controller: bbr,
+    }
+  - {
+      name: "[Tuic] 🇵🇱 PL-s16.serv00.com-tuic 1",
+      server: s16.serv00.com,
+      port: 49477,
+      type: tuic,
+      password: admin,
+      uuid: 87bf5ca0-6d29-434e-bf3c-4ef66e68d1c8,
+      sni: www.bing.com,
+      skip-cert-verify: true,
+      alpn: [h3],
+      disable-sni: true,
+      reduce-rtt: false,
+      request-timeout: 15000,
+      udp-relay-mode: native,
+      congestion-controller: bbr,
+    }
+  - {
+      name: "[Tuic] 🇵🇱 PL-s16.serv00.com-tuic 2",
+      server: s16.serv00.com,
+      port: 51996,
+      type: tuic,
+      password: admin,
+      uuid: 87bf5ca0-6d29-434e-bf3c-4ef66e68d1c8,
+      sni: www.bing.com,
+      skip-cert-verify: true,
+      alpn: [h3],
+      disable-sni: true,
+      reduce-rtt: false,
+      request-timeout: 15000,
+      udp-relay-mode: native,
+      congestion-controller: bbr,
+    }
+  - {
+      name: "[Tuic] 🇵🇱 PL-s16.serv00.com-tuic 3",
+      server: s16.serv00.com,
+      port: 61757,
+      type: tuic,
+      password: admin,
+      uuid: 87bf5ca0-6d29-434e-bf3c-4ef66e68d1c8,
+      sni: www.bing.com,
+      skip-cert-verify: true,
+      alpn: [h3],
+      disable-sni: true,
+      reduce-rtt: false,
+      request-timeout: 15000,
+      udp-relay-mode: native,
+      congestion-controller: bbr,
+    }
+  - {
+      name: "[Tuic] 🇵🇱 PL-s16.serv00.com-tuic 4",
+      server: panel16.serv00.com,
+      port: 49477,
+      type: tuic,
+      password: admin,
+      uuid: 87bf5ca0-6d29-434e-bf3c-4ef66e68d1c8,
+      sni: www.bing.com,
+      skip-cert-verify: true,
+      alpn: [h3],
+      disable-sni: true,
+      reduce-rtt: false,
+      request-timeout: 15000,
+      udp-relay-mode: native,
+      congestion-controller: bbr,
+    }
+  - {
+      name: "[Tuic] 🇵🇱 PL-s16.serv00.com-tuic 5",
+      server: panel16.serv00.com,
+      port: 51996,
+      type: tuic,
+      password: admin,
+      uuid: 87bf5ca0-6d29-434e-bf3c-4ef66e68d1c8,
+      sni: www.bing.com,
+      skip-cert-verify: true,
+      alpn: [h3],
+      disable-sni: true,
+      reduce-rtt: false,
+      request-timeout: 15000,
+      udp-relay-mode: native,
+      congestion-controller: bbr,
+    }
+  - {
+      name: "[Tuic] 🇵🇱 PL-s16.serv00.com-tuic 6",
+      server: panel16.serv00.com,
+      port: 61757,
+      type: tuic,
+      password: admin,
+      uuid: 87bf5ca0-6d29-434e-bf3c-4ef66e68d1c8,
+      sni: www.bing.com,
+      skip-cert-verify: true,
+      alpn: [h3],
+      disable-sni: true,
+      reduce-rtt: false,
+      request-timeout: 15000,
+      udp-relay-mode: native,
+      congestion-controller: bbr,
+    }
+  - {
+      name: "[Tuic] 🇵🇱 PL-s16.serv00.com-tuic 7",
+      server: web16.serv00.com,
+      port: 49477,
+      type: tuic,
+      password: admin,
+      uuid: 87bf5ca0-6d29-434e-bf3c-4ef66e68d1c8,
+      sni: www.bing.com,
+      skip-cert-verify: true,
+      alpn: [h3],
+      disable-sni: true,
+      reduce-rtt: false,
+      request-timeout: 15000,
+      udp-relay-mode: native,
+      congestion-controller: bbr,
+    }
+  - {
+      name: "[Tuic] 🇵🇱 PL-s16.serv00.com-tuic 8",
+      server: web16.serv00.com,
+      port: 51996,
+      type: tuic,
+      password: admin,
+      uuid: 87bf5ca0-6d29-434e-bf3c-4ef66e68d1c8,
+      sni: www.bing.com,
+      skip-cert-verify: true,
+      alpn: [h3],
+      disable-sni: true,
+      reduce-rtt: false,
+      request-timeout: 15000,
+      udp-relay-mode: native,
+      congestion-controller: bbr,
+    }
+  - {
+      name: "[Tuic] 🇵🇱 PL-s16.serv00.com-tuic 9",
+      server: web16.serv00.com,
+      port: 61757,
+      type: tuic,
+      password: admin,
+      uuid: 87bf5ca0-6d29-434e-bf3c-4ef66e68d1c8,
+      sni: www.bing.com,
+      skip-cert-verify: true,
+      alpn: [h3],
+      disable-sni: true,
+      reduce-rtt: false,
+      request-timeout: 15000,
+      udp-relay-mode: native,
+      congestion-controller: bbr,
+    }
+  - {
+      name: "[Tuic] tu5-JPL1",
+      server: 45.196.233.40,
+      port: 20268,
+      type: tuic,
+      password: c01ba41a-d5bb-4d27-a24f-e7c57d3de9ce,
+      uuid: c01ba41a-d5bb-4d27-a24f-e7c57d3de9ce,
+      sni: www.bing.com,
+      skip-cert-verify: true,
+      alpn: [h3],
+      disable-sni: true,
+      reduce-rtt: false,
+      request-timeout: 15000,
+      udp-relay-mode: native,
+      congestion-controller: bbr,
+    }
+  - {
+      name: "[Tuic] tu5-JPL2",
+      server: 45.196.233.40,
+      port: 8888,
+      type: tuic,
+      password: c01ba41a-d5bb-4d27-a24f-e7c57d3de9ce,
+      uuid: c01ba41a-d5bb-4d27-a24f-e7c57d3de9ce,
+      sni: www.bing.com,
+      skip-cert-verify: true,
+      alpn: [h3],
+      disable-sni: true,
+      reduce-rtt: false,
+      request-timeout: 15000,
+      udp-relay-mode: native,
+      congestion-controller: bbr,
+    }
+  - {
+      name: "[Tuic] tu5-JPL3",
+      server: 45.196.233.40,
+      port: 8889,
+      type: tuic,
+      password: c01ba41a-d5bb-4d27-a24f-e7c57d3de9ce,
+      uuid: c01ba41a-d5bb-4d27-a24f-e7c57d3de9ce,
+      sni: www.bing.com,
+      skip-cert-verify: true,
+      alpn: [h3],
+      disable-sni: true,
+      reduce-rtt: false,
+      request-timeout: 15000,
+      udp-relay-mode: native,
+      congestion-controller: bbr,
+    }
+  - {
+      name: "[Tuic] tu5-JPL4",
+      server: 45.196.233.40,
+      port: 8890,
+      type: tuic,
+      password: c01ba41a-d5bb-4d27-a24f-e7c57d3de9ce,
+      uuid: c01ba41a-d5bb-4d27-a24f-e7c57d3de9ce,
+      sni: www.bing.com,
+      skip-cert-verify: true,
+      alpn: [h3],
+      disable-sni: true,
+      reduce-rtt: false,
+      request-timeout: 15000,
+      udp-relay-mode: native,
+      congestion-controller: bbr,
+    }
+  - {
+      name: "[Tuic] tu5-JPL5",
+      server: 45.196.233.40,
+      port: 8891,
+      type: tuic,
+      password: c01ba41a-d5bb-4d27-a24f-e7c57d3de9ce,
+      uuid: c01ba41a-d5bb-4d27-a24f-e7c57d3de9ce,
+      sni: www.bing.com,
+      skip-cert-verify: true,
+      alpn: [h3],
+      disable-sni: true,
+      reduce-rtt: false,
+      request-timeout: 15000,
+      udp-relay-mode: native,
+      congestion-controller: bbr,
+    }
+  - {
+      name: "[Tuic] tu5-JPL6",
+      server: 45.196.233.40,
+      port: 8892,
+      type: tuic,
+      password: c01ba41a-d5bb-4d27-a24f-e7c57d3de9ce,
+      uuid: c01ba41a-d5bb-4d27-a24f-e7c57d3de9ce,
+      sni: www.bing.com,
+      skip-cert-verify: true,
+      alpn: [h3],
+      disable-sni: true,
+      reduce-rtt: false,
+      request-timeout: 15000,
+      udp-relay-mode: native,
+      congestion-controller: bbr,
+    }
+  - {
+      name: "[Tuic] tu5-JPL7",
+      server: 45.196.233.40,
+      port: 8893,
+      type: tuic,
+      password: c01ba41a-d5bb-4d27-a24f-e7c57d3de9ce,
+      uuid: c01ba41a-d5bb-4d27-a24f-e7c57d3de9ce,
+      sni: www.bing.com,
+      skip-cert-verify: true,
+      alpn: [h3],
+      disable-sni: true,
+      reduce-rtt: false,
+      request-timeout: 15000,
+      udp-relay-mode: native,
+      congestion-controller: bbr,
+    }
+  - {
+      name: "[Tuic] tu5-JPL8",
+      server: 45.196.233.40,
+      port: 8894,
+      type: tuic,
+      password: c01ba41a-d5bb-4d27-a24f-e7c57d3de9ce,
+      uuid: c01ba41a-d5bb-4d27-a24f-e7c57d3de9ce,
+      sni: www.bing.com,
+      skip-cert-verify: true,
+      alpn: [h3],
+      disable-sni: true,
+      reduce-rtt: false,
+      request-timeout: 15000,
+      udp-relay-mode: native,
+      congestion-controller: bbr,
+    }
+  - {
+      name: "[Tuic] tu5-JPL9",
+      server: 45.196.233.40,
+      port: 8895,
+      type: tuic,
+      password: c01ba41a-d5bb-4d27-a24f-e7c57d3de9ce,
+      uuid: c01ba41a-d5bb-4d27-a24f-e7c57d3de9ce,
+      sni: www.bing.com,
+      skip-cert-verify: true,
+      alpn: [h3],
+      disable-sni: true,
+      reduce-rtt: false,
+      request-timeout: 15000,
+      udp-relay-mode: native,
+      congestion-controller: bbr,
+    }
+  - {
+      name: "[Tuic] tu5-JPL10",
+      server: 45.196.233.40,
+      port: 8896,
+      type: tuic,
+      password: c01ba41a-d5bb-4d27-a24f-e7c57d3de9ce,
+      uuid: c01ba41a-d5bb-4d27-a24f-e7c57d3de9ce,
+      sni: www.bing.com,
+      skip-cert-verify: true,
+      alpn: [h3],
+      disable-sni: true,
+      reduce-rtt: false,
+      request-timeout: 15000,
+      udp-relay-mode: native,
+      congestion-controller: bbr,
+    }
+  - {
+      name: "[Tuic] tu5-JPL11",
+      server: 45.196.233.40,
+      port: 8897,
+      type: tuic,
+      password: c01ba41a-d5bb-4d27-a24f-e7c57d3de9ce,
+      uuid: c01ba41a-d5bb-4d27-a24f-e7c57d3de9ce,
+      sni: www.bing.com,
+      skip-cert-verify: true,
+      alpn: [h3],
+      disable-sni: true,
+      reduce-rtt: false,
+      request-timeout: 15000,
+      udp-relay-mode: native,
+      congestion-controller: bbr,
+    }
+  - {
+      name: "[Tuic] tu5-JPL12",
+      server: 45.196.233.40,
+      port: 8898,
+      type: tuic,
+      password: c01ba41a-d5bb-4d27-a24f-e7c57d3de9ce,
+      uuid: c01ba41a-d5bb-4d27-a24f-e7c57d3de9ce,
+      sni: www.bing.com,
+      skip-cert-verify: true,
+      alpn: [h3],
+      disable-sni: true,
+      reduce-rtt: false,
+      request-timeout: 15000,
+      udp-relay-mode: native,
+      congestion-controller: bbr,
+    }
+
+proxy-groups:
+  - name: 负载均衡
+    type: load-balance
+    url: https://www.gstatic.com/generate_204
+    interval: 300
+    strategy: round-robin
+    proxies:
+      - vless-reality-vision-g-us-free
+      - vmess-ws-g-us-free
+      - hysteria2-g-us-free
+      - hysteria2-g-us-free1
+      - hysteria2-g-us-free2
+      - hysteria2-g-us-free3
+      - hysteria2-g-us-free4
+      - hysteria2-g-us-free5
+      - tuic5-g-us-free
+      - tuic5-g-us-free1
+      - tuic5-g-us-free2
+      - tuic5-g-us-free3
+      - tuic5-g-us-free4
+      - tuic5-g-us-free5
+      - vmess-tls-argo固定-g-us-free
+      - vmess-argo固定-g-us-free
+      - "[Tuic] 🇵🇱 PL-s15.serv00.com-tuic"
+      - "[Tuic] 🇵🇱 PL-s15.serv00.com-tuic 2"
+      - "[Tuic] 🇵🇱 PL-s15.serv00.com-tuic 3"
+      - "[Tuic] 🇵🇱 PL-s15.serv00.com-tuic 4"
+      - "[Tuic] 🇵🇱 PL-s15.serv00.com-tuic 5"
+      - "[Tuic] 🇵🇱 PL-s15.serv00.com-tuic 6"
+      - "[Tuic] 🇵🇱 PL-s15.serv00.com-tuic 7"
+      - "[Tuic] 🇵🇱 PL-s15.serv00.com-tuic 8"
+      - "[Tuic] 🇵🇱 PL-s15.serv00.com-tuic 9"
+      - "[Tuic] 🇵🇱 PL-s16.serv00.com-tuic 1"
+      - "[Tuic] 🇵🇱 PL-s16.serv00.com-tuic 2"
+      - "[Tuic] 🇵🇱 PL-s16.serv00.com-tuic 3"
+      - "[Tuic] 🇵🇱 PL-s16.serv00.com-tuic 4"
+      - "[Tuic] 🇵🇱 PL-s16.serv00.com-tuic 5"
+      - "[Tuic] 🇵🇱 PL-s16.serv00.com-tuic 6"
+      - "[Tuic] 🇵🇱 PL-s16.serv00.com-tuic 7"
+      - "[Tuic] 🇵🇱 PL-s16.serv00.com-tuic 8"
+      - "[Tuic] 🇵🇱 PL-s16.serv00.com-tuic 9"
+      - "[Tuic] tu5-JPL1"
+      - "[Tuic] tu5-JPL2"
+      - "[Tuic] tu5-JPL3"
+      - "[Tuic] tu5-JPL4"
+      - "[Tuic] tu5-JPL5"
+      - "[Tuic] tu5-JPL6"
+      - "[Tuic] tu5-JPL7"
+      - "[Tuic] tu5-JPL8"
+      - "[Tuic] tu5-JPL9"
+      - "[Tuic] tu5-JPL10"
+      - "[Tuic] tu5-JPL11"
+      - "[Tuic] tu5-JPL12"
+
+  - name: 自动选择
+    type: url-test
+    url: https://www.gstatic.com/generate_204
+    interval: 300
+    tolerance: 50
+    proxies:
+      - vless-reality-vision-g-us-free
+      - vmess-ws-g-us-free
+      - hysteria2-g-us-free
+      - hysteria2-g-us-free1
+      - hysteria2-g-us-free2
+      - hysteria2-g-us-free3
+      - hysteria2-g-us-free4
+      - hysteria2-g-us-free5
+      - tuic5-g-us-free
+      - tuic5-g-us-free1
+      - tuic5-g-us-free2
+      - tuic5-g-us-free3
+      - tuic5-g-us-free4
+      - tuic5-g-us-free5
+      - vmess-tls-argo固定-g-us-free
+      - vmess-argo固定-g-us-free
+      - "[Tuic] 🇵🇱 PL-s15.serv00.com-tuic"
+      - "[Tuic] 🇵🇱 PL-s15.serv00.com-tuic 2"
+      - "[Tuic] 🇵🇱 PL-s15.serv00.com-tuic 3"
+      - "[Tuic] 🇵🇱 PL-s15.serv00.com-tuic 4"
+      - "[Tuic] 🇵🇱 PL-s15.serv00.com-tuic 5"
+      - "[Tuic] 🇵🇱 PL-s15.serv00.com-tuic 6"
+      - "[Tuic] 🇵🇱 PL-s15.serv00.com-tuic 7"
+      - "[Tuic] 🇵🇱 PL-s15.serv00.com-tuic 8"
+      - "[Tuic] 🇵🇱 PL-s15.serv00.com-tuic 9"
+      - "[Tuic] 🇵🇱 PL-s16.serv00.com-tuic 1"
+      - "[Tuic] 🇵🇱 PL-s16.serv00.com-tuic 2"
+      - "[Tuic] 🇵🇱 PL-s16.serv00.com-tuic 3"
+      - "[Tuic] 🇵🇱 PL-s16.serv00.com-tuic 4"
+      - "[Tuic] 🇵🇱 PL-s16.serv00.com-tuic 5"
+      - "[Tuic] 🇵🇱 PL-s16.serv00.com-tuic 6"
+      - "[Tuic] 🇵🇱 PL-s16.serv00.com-tuic 7"
+      - "[Tuic] 🇵🇱 PL-s16.serv00.com-tuic 8"
+      - "[Tuic] 🇵🇱 PL-s16.serv00.com-tuic 9"
+      - "[Tuic] tu5-JPL1"
+      - "[Tuic] tu5-JPL2"
+      - "[Tuic] tu5-JPL3"
+      - "[Tuic] tu5-JPL4"
+      - "[Tuic] tu5-JPL5"
+      - "[Tuic] tu5-JPL6"
+      - "[Tuic] tu5-JPL7"
+      - "[Tuic] tu5-JPL8"
+      - "[Tuic] tu5-JPL9"
+      - "[Tuic] tu5-JPL10"
+      - "[Tuic] tu5-JPL11"
+      - "[Tuic] tu5-JPL12"
+
+  - name: 🌍选择代理节点
+    type: select
+    proxies:
+      - 负载均衡
+      - 自动选择
+      - DIRECT
+      - vless-reality-vision-g-us-free
+      - vmess-ws-g-us-free
+      - hysteria2-g-us-free
+      - hysteria2-g-us-free1
+      - hysteria2-g-us-free2
+      - hysteria2-g-us-free3
+      - hysteria2-g-us-free4
+      - hysteria2-g-us-free5
+      - tuic5-g-us-free
+      - tuic5-g-us-free1
+      - tuic5-g-us-free2
+      - tuic5-g-us-free3
+      - tuic5-g-us-free4
+      - tuic5-g-us-free5
+      - vmess-tls-argo固定-g-us-free
+      - vmess-argo固定-g-us-free
+      - "[Tuic] 🇵🇱 PL-s15.serv00.com-tuic"
+      - "[Tuic] 🇵🇱 PL-s15.serv00.com-tuic 2"
+      - "[Tuic] 🇵🇱 PL-s15.serv00.com-tuic 3"
+      - "[Tuic] 🇵🇱 PL-s15.serv00.com-tuic 4"
+      - "[Tuic] 🇵🇱 PL-s15.serv00.com-tuic 5"
+      - "[Tuic] 🇵🇱 PL-s15.serv00.com-tuic 6"
+      - "[Tuic] 🇵🇱 PL-s15.serv00.com-tuic 7"
+      - "[Tuic] 🇵🇱 PL-s15.serv00.com-tuic 8"
+      - "[Tuic] 🇵🇱 PL-s15.serv00.com-tuic 9"
+      - "[Tuic] 🇵🇱 PL-s16.serv00.com-tuic 1"
+      - "[Tuic] 🇵🇱 PL-s16.serv00.com-tuic 2"
+      - "[Tuic] 🇵🇱 PL-s16.serv00.com-tuic 3"
+      - "[Tuic] 🇵🇱 PL-s16.serv00.com-tuic 4"
+      - "[Tuic] 🇵🇱 PL-s16.serv00.com-tuic 5"
+      - "[Tuic] 🇵🇱 PL-s16.serv00.com-tuic 6"
+      - "[Tuic] 🇵🇱 PL-s16.serv00.com-tuic 7"
+      - "[Tuic] 🇵🇱 PL-s16.serv00.com-tuic 8"
+      - "[Tuic] 🇵🇱 PL-s16.serv00.com-tuic 9"
+      - "[Tuic] tu5-JPL1"
+      - "[Tuic] tu5-JPL2"
+      - "[Tuic] tu5-JPL3"
+      - "[Tuic] tu5-JPL4"
+      - "[Tuic] tu5-JPL5"
+      - "[Tuic] tu5-JPL6"
+      - "[Tuic] tu5-JPL7"
+      - "[Tuic] tu5-JPL8"
+      - "[Tuic] tu5-JPL9"
+      - "[Tuic] tu5-JPL10"
+      - "[Tuic] tu5-JPL11"
+      - "[Tuic] tu5-JPL12"
+rules:
+  - GEOIP,LAN,DIRECT
+  - GEOIP,CN,DIRECT
+  - MATCH,🌍选择代理节点
