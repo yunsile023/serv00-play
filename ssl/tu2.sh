@@ -87,7 +87,67 @@ check_binexec_and_port () {
   export PORT3=$udp_port3
 }
 
-# 检查并分配端口
+clear
+echo -e "\e[1;35m正在安装中,请稍等...\e[0m"
+
+# 根据架构选择下载文件
+ARCH=$(uname -m)
+DOWNLOAD_DIR="."
+mkdir -p "$DOWNLOAD_DIR"
+FILE_INFO=()
+
+if [[ "$ARCH" =~ ^(arm|arm64|aarch64)$ ]]; then
+    FILE_INFO=(
+        "https://github.com/etjec4/tuic/releases/download/tuic-server-1.0.0/tuic-server-1.0.0-x86_64-unknown-freebsd web"
+        "https://github.com/eooce/test/releases/download/ARM/swith npm"
+    )
+elif [[ "$ARCH" =~ ^(amd64|x86_64|x86)$ ]]; then
+    FILE_INFO=(
+        "https://github.com/etjec4/tuic/releases/download/tuic-server-1.0.0/tuic-server-1.0.0-x86_64-unknown-freebsd web"
+        "https://github.com/eooce/test/releases/download/freebsd/npm npm"
+    )
+else
+    echo -e "\e[1;91mUnsupported architecture: $ARCH\e[0m"
+    exit 1
+fi
+
+declare -A FILE_MAP
+
+# 随机文件名生成函数
+generate_random_name() {
+    local chars=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890
+    local name=""
+    for i in {1..6}; do
+        name="$name${chars:RANDOM%${#chars}:1}"
+    done
+    echo "$name"
+}
+
+# 下载文件函数
+download_file() {
+    local url=$1
+    local file_type=$2
+    local random_name
+    random_name=$(generate_random_name)
+    local file_path="${DOWNLOAD_DIR}/${random_name}_${file_type}"
+
+    echo -e "\e[1;33m正在下载: $url\e[0m"
+    if curl -L "$url" -o "$file_path"; then
+        echo -e "\e[1;32m下载成功: $file_path\e[0m"
+        FILE_MAP[$file_type]=$file_path
+    else
+        echo -e "\e[1;91m下载失败: $url\e[0m"
+        exit 1
+    fi
+}
+
+for entry in "${FILE_INFO[@]}"; do
+    url=$(echo "$entry" | awk '{print $1}')
+    file_type=$(echo "$entry" | awk '{print $2}')
+    download_file "$url" "$file_type"
+done
+
+# 分配端口
 allocate_ports() {
     port_list=$(devil port list)
     udp_ports=($(echo "$port_list" | awk '/udp/ {print $1}'))
@@ -109,6 +169,27 @@ allocate_ports() {
     export PORT2=${udp_ports[1]}
     export PORT3=${udp_ports[2]}
 }
+
+allocate_ports
+
+# 生成 TUIC 配置文件
+generate_tuic_config() {
+    config_file="./tuic_config.json"
+    cat > "$config_file" <<EOF
+{
+    "port1": $PORT1,
+    "port2": $PORT2,
+    "port3": $PORT3,
+    "other_config": "value"
+}
+EOF
+    echo -e "\e[1;35mTUIC 配置文件已生成: $config_file\e[0m"
+}
+
+generate_tuic_config
+
+echo -e "\e[1;32m安装完成！\e[0m"
+
 
 # 调用端口分配函数
 allocate_ports
