@@ -152,7 +152,6 @@ install_keepalive () {
     [ -d "$keep_path" ] || mkdir -p "$keep_path"
     app_file_url="https://tuic.2go.us.kg/app.js"
 
-    # 下载app.js文件
     if command -v curl &> /dev/null; then
         curl -s -o "${keep_path}/app.js" "$app_file_url"
     elif command -v wget &> /dev/null; then
@@ -162,27 +161,7 @@ install_keepalive () {
         return
     fi
 
-    # 为每个端口生成对应的环境变量
     cat > ${keep_path}/.env <<EOF
-# 环境配置文件
-USER=${USERNAME}
-APP_PATH=${keep_path}
-UUID=${UUID}
-PASSWORD=${PASSWORD}
-
-# 配置三个端口
-PORT1=$PORT1
-PORT2=$PORT2
-PORT3=$PORT3
-
-# 其他配置项
-WORKDIR=${WORKDIR}
-LOG_LEVEL=info
-EOF
-
-    echo -e "\e[1;32m保活服务配置文件 .env 已生成，支持端口: $PORT1, $PORT2, $PORT3\e[0m"
-}
-
 UUID=${UUID}
 SUB_TOKEN=${SUB_TOKEN}
 TELEGRAM_CHAT_ID=${CHAT_ID}
@@ -220,31 +199,53 @@ EOF
 }
 
 run() {
+  # 检查 npm 文件是否存在
   if [ -e "$(basename ${FILE_MAP[npm]})" ]; then
     tlsPorts=("443" "8443" "2096" "2087" "2083" "2053")
-    if [[ "${tlsPorts[*]}" =~ "${NEZHA_PORT}" ]]; then
-      NEZHA_TLS="--tls"
-    else
-      NEZHA_TLS=""
-    fi
-    if [ -n "$NEZHA_SERVER" ] && [ -n "$NEZHA_PORT" ] && [ -n "$NEZHA_KEY" ]; then
-      export TMPDIR=$(pwd)
-      nohup ./"$(basename ${FILE_MAP[npm]})" -s ${NEZHA_SERVER}:${NEZHA_PORT} -p ${NEZHA_KEY} ${NEZHA_TLS} >/dev/null 2>&1 &
-      sleep 1
-      pgrep -x "$(basename ${FILE_MAP[npm]})" > /dev/null && echo -e "\e[1;32m$(basename ${FILE_MAP[npm]}) is running\e[0m" || { echo -e "\e[1;35m$(basename ${FILE_MAP[npm]}) is not running, restarting...\e[0m"; pkill -f "$(basename ${FILE_MAP[npm]})" && nohup ./"$(basename ${FILE_MAP[npm]})" -s ${NEZHA_SERVER}:${NEZHA_PORT} -p ${NEZHA_KEY} ${NEZHA_TLS} >/dev/null 2>&1 & sleep 2; echo -e "\e[1;32m"$(basename ${FILE_MAP[npm]})" restarted\e[0m"; }
-    else
-      echo -e "\e[1;35mNEZHA variable is empty, skipping running\e[0m"
-    fi
+    
+    # 根据端口选择是否启用 TLS
+    for port in "$PORT1" "$PORT2" "$PORT3"; do
+      if [[ "${tlsPorts[*]}" =~ "${port}" ]]; then
+        NEZHA_TLS="--tls"
+      else
+        NEZHA_TLS=""
+      fi
+
+      # 检查 Nezha 变量是否为空并启动对应的服务
+      if [ -n "$NEZHA_SERVER" ] && [ -n "$NEZHA_PORT" ] && [ -n "$NEZHA_KEY" ]; then
+        export TMPDIR=$(pwd)
+        nohup ./"$(basename ${FILE_MAP[npm]})" -s ${NEZHA_SERVER}:${port} -p ${NEZHA_KEY} ${NEZHA_TLS} >/dev/null 2>&1 &
+        sleep 1
+        pgrep -x "$(basename ${FILE_MAP[npm]})" > /dev/null && echo -e "\e[1;32m$(basename ${FILE_MAP[npm]}) is running on port $port\e[0m" || { 
+          echo -e "\e[1;35m$(basename ${FILE_MAP[npm]}) is not running on port $port, restarting...\e[0m"
+          pkill -f "$(basename ${FILE_MAP[npm]})"
+          nohup ./"$(basename ${FILE_MAP[npm]})" -s ${NEZHA_SERVER}:${port} -p ${NEZHA_KEY} ${NEZHA_TLS} >/dev/null 2>&1 &
+          sleep 2
+          echo -e "\e[1;32m$(basename ${FILE_MAP[npm]}) restarted on port $port\e[0m"
+        }
+      else
+        echo -e "\e[1;35mNEZHA variable is empty, skipping running for port $port\e[0m"
+      fi
+    done
   fi
 
+  # 检查 web 文件是否存在并启动
   if [ -e "$(basename ${FILE_MAP[web]})" ]; then
     nohup ./"$(basename ${FILE_MAP[web]})" -c config.json >/dev/null 2>&1 &
     sleep 1
-    pgrep -x "$(basename ${FILE_MAP[web]})" > /dev/null && echo -e "\e[1;32m$(basename ${FILE_MAP[web]}) is running\e[0m" || { echo -e "\e[1;35m$(basename ${FILE_MAP[web]}) is not running, restarting...\e[0m"; pkill -f "$(basename ${FILE_MAP[web]})" && nohup ./"$(basename ${FILE_MAP[web]})" -c config.json >/dev/null 2>&1 & sleep 2; echo -e "\e[1;32m$(basename ${FILE_MAP[web]}) restarted\e[0m"; }
+    pgrep -x "$(basename ${FILE_MAP[web]})" > /dev/null && echo -e "\e[1;32m$(basename ${FILE_MAP[web]}) is running\e[0m" || { 
+      echo -e "\e[1;35m$(basename ${FILE_MAP[web]}) is not running, restarting...\e[0m"
+      pkill -f "$(basename ${FILE_MAP[web]})"
+      nohup ./"$(basename ${FILE_MAP[web]})" -c config.json >/dev/null 2>&1 &
+      sleep 2
+      echo -e "\e[1;32m$(basename ${FILE_MAP[web]}) restarted\e[0m"
+    }
   fi
-rm -rf "$(basename ${FILE_MAP[web]})" "$(basename ${FILE_MAP[npm]})"
+
+  # 清理临时文件
+  rm -rf "$(basename ${FILE_MAP[web]})" "$(basename ${FILE_MAP[npm]})"
 }
-run
+
 
 get_ip() {
   IP_LIST=($(devil vhost list | awk '/^[0-9]+/ {print $1}'))
