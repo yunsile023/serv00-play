@@ -147,6 +147,7 @@ wait
 openssl req -x509 -nodes -newkey ec:<(openssl ecparam -name prime256v1) -keyout $WORKDIR/server.key -out $WORKDIR/server.crt -subj "/CN=bing.com" -days 36500
 
 # Generate configuration file
+# Generate multiple configuration files
 for PORT in "${PORTS[@]}"; do
 cat > "config_$PORT.json" <<EOL
 {
@@ -170,8 +171,34 @@ cat > "config_$PORT.json" <<EOL
   "log_level": "warn"
 }
 EOL
+
 echo -e "\e[1;32mGenerated config_$PORT.json\e[0m"
 done
+
+# Run multiple instances
+for PORT in "${PORTS[@]}"; do
+    nohup ./${FILE_MAP[web]} -c "config_$PORT.json" >$WORKDIR/log_tuic_$PORT.log 2>&1 &
+    echo -e "\e[1;32mInstance running on port $PORT\e[0m"
+done
+
+# Output links for V2RayN
+for PORT in "${PORTS[@]}"; do
+    V2RAY_LINK="tuic://$UUID%3A$PASSWORD@$HOSTNAME:$PORT?sni=www.bing.com&alpn=h3&congestion_control=bbr#PL-${HOSTNAME}-tuic"
+    echo -e "\e[1;32mYou can copy the following link to V2RayN for port $PORT:\e[0m"
+    echo -e "\e[1;32m$V2RAY_LINK\e[0m"
+done
+
+# Check UDP port status
+for PORT in "${PORTS[@]}"; do
+    timeout 2 bash -c "echo > /dev/udp/127.0.0.1/$PORT" 2>/dev/null
+    if [ $? -eq 0 ]; then
+        echo -e "\e[1;32mUDP Port $PORT is running successfully.\e[0m"
+    else
+        echo -e "\e[1;31mUDP Port $PORT failed to start. Check logs.\e[0m"
+    fi
+done
+
+echo -e "\e[1;32mAll instances are running successfully!\e[0m"
 
 install_keepalive () {
     echo -e "\n\e[1;35m正在安装保活服务中,请稍等......\e[0m"
