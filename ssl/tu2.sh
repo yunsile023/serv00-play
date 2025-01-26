@@ -25,19 +25,28 @@ check_binexec_and_port () {
   if [[ $udp_ports -lt 1 ]]; then
       echo -e "\e[1;91m没有可用的UDP端口,正在调整...\e[0m"
 
+      # 如果没有UDP端口且有足够TCP端口，删除一个TCP端口
       if [[ $tcp_ports -ge 3 ]]; then
           tcp_port_to_delete=$(echo "$port_list" | awk '/tcp/ {print $1}' | head -n 1)
           devil port del tcp $tcp_port_to_delete
           echo -e "\e[1;32m已删除TCP端口: $tcp_port_to_delete\e[0m"
       fi
 
-      while true; do
+      # 添加三个UDP端口
+      udp_ports_assigned=0
+      while [[ $udp_ports_assigned -lt 3 ]]; do
           udp_port=$(shuf -i 10000-65535 -n 1)
           result=$(devil port add udp $udp_port 2>&1)
           if [[ $result == *"succesfully"* ]]; then
-              echo -e "\e[1;32m已添加UDP端口: $udp_port"
-              udp_port1=$udp_port
-              break
+              echo -e "\e[1;32m已添加UDP端口: $udp_port\e[0m"
+              if [[ $udp_ports_assigned -eq 0 ]]; then
+                  udp_port1=$udp_port
+              elif [[ $udp_ports_assigned -eq 1 ]]; then
+                  udp_port2=$udp_port
+              elif [[ $udp_ports_assigned -eq 2 ]]; then
+                  udp_port3=$udp_port
+              fi
+              ((udp_ports_assigned++))
           else
               echo -e "\e[1;33m端口 $udp_port 不可用，尝试其他端口...\e[0m"
           fi
@@ -47,17 +56,37 @@ check_binexec_and_port () {
       devil binexec on >/dev/null 2>&1
       kill -9 $(ps -o ppid= -p $$) >/dev/null 2>&1
   else
-      udp_ports=$(echo "$port_list" | awk '/udp/ {print $1}')
-      udp_port1=$(echo "$udp_ports" | sed -n '1p')
+      # 从现有的 UDP 端口列表中获取第一个、第二个和第三个端口
+      udp_ports=($(echo "$port_list" | awk '/udp/ {print $1}'))
 
-      echo -e "\e[1;35m当前UDP端口: $udp_port1\e[0m"
+      udp_port1=${udp_ports[0]}
+      udp_port2=${udp_ports[1]:-$((udp_port1 + 1))}
+      udp_port3=${udp_ports[2]:-$((udp_port2 + 1))}
+
+      # 如果只有部分端口存在，补齐剩余端口
+      while [[ -z $udp_port3 ]]; do
+          udp_port=$(shuf -i 10000-65535 -n 1)
+          result=$(devil port add udp $udp_port 2>&1)
+          if [[ $result == *"succesfully"* ]]; then
+              if [[ -z $udp_port2 ]]; then
+                  udp_port2=$udp_port
+              else
+                  udp_port3=$udp_port
+              fi
+              echo -e "\e[1;32m已补充UDP端口: $udp_port\e[0m"
+          else
+              echo -e "\e[1;33m端口 $udp_port 不可用，尝试其他端口...\e[0m"
+          fi
+      done
+
+      echo -e "\e[1;35m当前UDP端口: $udp_port1, $udp_port2, $udp_port3\e[0m"
   fi
 
   export PORT1=$udp_port1
-  export PORT2=$((PORT1 + 1))
-  export PORT3=$((PORT2 + 1))
+  export PORT2=$udp_port2
+  export PORT3=$udp_port3
 }
-check_binexec_and_port
+
 
 clear
 echo -e "\e[1;35m正在安装中,请稍等...\e[0m"
