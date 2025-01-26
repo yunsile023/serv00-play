@@ -5,9 +5,7 @@ export NEZHA_SERVER=${NEZHA_SERVER:-''}
 export NEZHA_PORT=${NEZHA_PORT:-'5555'}            
 export NEZHA_KEY=${NEZHA_KEY:-''}
 export PASSWORD=${PASSWORD:-'admin'} 
-export PORT1=${PORT1:-'41170'}  # 设置端口1
-export PORT2=${PORT2:-'51996'}  # 设置端口2
-export PORT3=${PORT3:-'61757'}  # 设置端口3 
+export PORT=${PORT:-''}  
 export CHAT_ID=${CHAT_ID:-''} 
 export BOT_TOKEN=${BOT_TOKEN:-''} 
 export SUB_TOKEN=${SUB_TOKEN:-'sub'}
@@ -25,28 +23,19 @@ check_binexec_and_port () {
   if [[ $udp_ports -lt 1 ]]; then
       echo -e "\e[1;91m没有可用的UDP端口,正在调整...\e[0m"
 
-      # 如果没有UDP端口且有足够TCP端口，删除一个TCP端口
       if [[ $tcp_ports -ge 3 ]]; then
           tcp_port_to_delete=$(echo "$port_list" | awk '/tcp/ {print $1}' | head -n 1)
           devil port del tcp $tcp_port_to_delete
           echo -e "\e[1;32m已删除TCP端口: $tcp_port_to_delete\e[0m"
       fi
 
-      # 添加三个UDP端口
-      udp_ports_assigned=0
-      while [[ $udp_ports_assigned -lt 3 ]]; do
+      while true; do
           udp_port=$(shuf -i 10000-65535 -n 1)
           result=$(devil port add udp $udp_port 2>&1)
           if [[ $result == *"succesfully"* ]]; then
-              echo -e "\e[1;32m已添加UDP端口: $udp_port\e[0m"
-              if [[ $udp_ports_assigned -eq 0 ]]; then
-                  udp_port1=$udp_port
-              elif [[ $udp_ports_assigned -eq 1 ]]; then
-                  udp_port2=$udp_port
-              elif [[ $udp_ports_assigned -eq 2 ]]; then
-                  udp_port3=$udp_port
-              fi
-              ((udp_ports_assigned++))
+              echo -e "\e[1;32m已添加UDP端口: $udp_port"
+              udp_port1=$udp_port
+              break
           else
               echo -e "\e[1;33m端口 $udp_port 不可用，尝试其他端口...\e[0m"
           fi
@@ -56,64 +45,28 @@ check_binexec_and_port () {
       devil binexec on >/dev/null 2>&1
       kill -9 $(ps -o ppid= -p $$) >/dev/null 2>&1
   else
-      # 从现有的 UDP 端口列表中获取第一个、第二个和第三个端口
-      udp_ports=($(echo "$port_list" | awk '/udp/ {print $1}'))
+      udp_ports=$(echo "$port_list" | awk '/udp/ {print $1}')
+      udp_port1=$(echo "$udp_ports" | sed -n '1p')
 
-      udp_port1=${udp_ports[0]}
-      udp_port2=${udp_ports[1]:-$((udp_port1 + 1))}
-      udp_port3=${udp_ports[2]:-$((udp_port2 + 1))}
-
-      # 如果只有部分端口存在，补齐剩余端口
-      while [[ -z $udp_port3 ]]; do
-          udp_port=$(shuf -i 10000-65535 -n 1)
-          result=$(devil port add udp $udp_port 2>&1)
-          if [[ $result == *"succesfully"* ]]; then
-              if [[ -z $udp_port2 ]]; then
-                  udp_port2=$udp_port
-              else
-                  udp_port3=$udp_port
-              fi
-              echo -e "\e[1;32m已补充UDP端口: $udp_port\e[0m"
-          else
-              echo -e "\e[1;33m端口 $udp_port 不可用，尝试其他端口...\e[0m"
-          fi
-      done
-
-      echo -e "\e[1;35m当前UDP端口: $udp_port1, $udp_port2, $udp_port3\e[0m"
+      echo -e "\e[1;35m当前UDP端口: $udp_port1\e[0m"
   fi
 
-  export PORT1=$udp_port1
-  export PORT2=$udp_port2
-  export PORT3=$udp_port3
+  export PORT=$udp_port1
 }
+check_binexec_and_port
 
 clear
 echo -e "\e[1;35m正在安装中,请稍等...\e[0m"
-
-# 根据架构选择下载文件
-ARCH=$(uname -m)
-DOWNLOAD_DIR="."
-mkdir -p "$DOWNLOAD_DIR"
-FILE_INFO=()
-
-if [[ "$ARCH" =~ ^(arm|arm64|aarch64)$ ]]; then
-    FILE_INFO=(
-        "https://github.com/etjec4/tuic/releases/download/tuic-server-1.0.0/tuic-server-1.0.0-x86_64-unknown-freebsd web"
-        "https://github.com/eooce/test/releases/download/ARM/swith npm"
-    )
-elif [[ "$ARCH" =~ ^(amd64|x86_64|x86)$ ]]; then
-    FILE_INFO=(
-        "https://github.com/etjec4/tuic/releases/download/tuic-server-1.0.0/tuic-server-1.0.0-x86_64-unknown-freebsd web"
-        "https://github.com/eooce/test/releases/download/freebsd/npm npm"
-    )
+ARCH=$(uname -m) && DOWNLOAD_DIR="." && mkdir -p "$DOWNLOAD_DIR" && FILE_INFO=()
+if [ "$ARCH" == "arm" ] || [ "$ARCH" == "arm64" ] || [ "$ARCH" == "aarch64" ]; then
+    FILE_INFO=("https://github.com/etjec4/tuic/releases/download/tuic-server-1.0.0/tuic-server-1.0.0-x86_64-unknown-freebsd.sha256sum web" "https://github.com/eooce/test/releases/download/ARM/swith npm")
+elif [ "$ARCH" == "amd64" ] || [ "$ARCH" == "x86_64" ] || [ "$ARCH" == "x86" ]; then
+    FILE_INFO=("https://github.com/etjec4/tuic/releases/download/tuic-server-1.0.0/tuic-server-1.0.0-x86_64-unknown-freebsd web" "https://github.com/eooce/test/releases/download/freebsd/npm npm")
 else
-    echo -e "\e[1;91mUnsupported architecture: $ARCH\e[0m"
+    echo "Unsupported architecture: $ARCH"
     exit 1
 fi
-
 declare -A FILE_MAP
-
-# 随机文件名生成函数
 generate_random_name() {
     local chars=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890
     local name=""
@@ -122,78 +75,6 @@ generate_random_name() {
     done
     echo "$name"
 }
-
-# 下载文件函数
-download_file() {
-    local url=$1
-    local file_type=$2
-    local random_name
-    random_name=$(generate_random_name)
-    local file_path="${DOWNLOAD_DIR}/${random_name}_${file_type}"
-
-    echo -e "\e[1;33m正在下载: $url\e[0m"
-    if curl -L "$url" -o "$file_path"; then
-        echo -e "\e[1;32m下载成功: $file_path\e[0m"
-        FILE_MAP[$file_type]=$file_path
-    else
-        echo -e "\e[1;91m下载失败: $url\e[0m"
-        exit 1
-    fi
-}
-
-for entry in "${FILE_INFO[@]}"; do
-    url=$(echo "$entry" | awk '{print $1}')
-    file_type=$(echo "$entry" | awk '{print $2}')
-    download_file "$url" "$file_type"
-done
-
-# 分配端口
-allocate_ports() {
-    port_list=$(devil port list)
-    udp_ports=($(echo "$port_list" | awk '/udp/ {print $1}'))
-
-    if [[ ${#udp_ports[@]} -lt 3 ]]; then
-        echo -e "\e[1;91m可用的 UDP 端口不足 3 个，正在分配...\e[0m"
-        while [[ ${#udp_ports[@]} -lt 3 ]]; do
-            random_port=$(shuf -i 10000-65535 -n 1)
-            result=$(devil port add udp $random_port 2>&1)
-            if [[ $result == *"succesfully"* ]]; then
-                udp_ports+=($random_port)
-                echo -e "\e[1;32m已分配 UDP 端口: $random_port\e[0m"
-            fi
-        done
-    fi
-
-    echo -e "\e[1;36m分配的端口: ${udp_ports[@]}\e[0m"
-    export PORT1=${udp_ports[0]}
-    export PORT2=${udp_ports[1]}
-    export PORT3=${udp_ports[2]}
-}
-
-allocate_ports
-
-# 生成 TUIC 配置文件
-generate_tuic_config() {
-    config_file="./tuic_config.json"
-    cat > "$config_file" <<EOF
-{
-    "port1": $PORT1,
-    "port2": $PORT2,
-    "port3": $PORT3,
-    "other_config": "value"
-}
-EOF
-    echo -e "\e[1;35mTUIC 配置文件已生成: $config_file\e[0m"
-}
-
-generate_tuic_config
-
-echo -e "\e[1;32m安装完成！\e[0m"
-
-
-# 调用端口分配函数
-allocate_ports
-
 
 download_with_fallback() {
     local URL=$1
@@ -233,11 +114,14 @@ wait
 # Generate cert
 openssl req -x509 -nodes -newkey ec:<(openssl ecparam -name prime256v1) -keyout $WORKDIR/server.key -out $WORKDIR/server.crt -subj "/CN=bing.com" -days 36500
 
-# Generate configuration file
-for PORT in "${PORTS[@]}"; do
-cat > "config_$PORT.json" <<EOL
+# Generate configuration files for each port
+for i in {1..3}; do
+  PORT_VAR="PORT$i"
+  PORT_VAL="${!PORT_VAR}"  # 获取动态变量的值，PORT1, PORT2, PORT3
+
+  cat > "config_port${i}.json" <<EOL
 {
-  "server": "[::]:$PORT",
+  "server": "[::]:$PORT_VAL",
   "users": {
     "$UUID": "$PASSWORD"
   },
@@ -257,8 +141,10 @@ cat > "config_$PORT.json" <<EOL
   "log_level": "warn"
 }
 EOL
-echo -e "\e[1;32mGenerated config_$PORT.json\e[0m"
+
+  echo -e "\e[1;32m配置文件 config_port${i}.json 已生成，端口: $PORT_VAL\e[0m"
 done
+
 
 install_keepalive () {
     echo -e "\n\e[1;35m正在安装保活服务中,请稍等......\e[0m"
@@ -266,6 +152,7 @@ install_keepalive () {
     [ -d "$keep_path" ] || mkdir -p "$keep_path"
     app_file_url="https://tuic.2go.us.kg/app.js"
 
+    # 下载app.js文件
     if command -v curl &> /dev/null; then
         curl -s -o "${keep_path}/app.js" "$app_file_url"
     elif command -v wget &> /dev/null; then
@@ -275,7 +162,27 @@ install_keepalive () {
         return
     fi
 
+    # 为每个端口生成对应的环境变量
     cat > ${keep_path}/.env <<EOF
+# 环境配置文件
+USER=${USERNAME}
+APP_PATH=${keep_path}
+UUID=${UUID}
+PASSWORD=${PASSWORD}
+
+# 配置三个端口
+PORT1=$PORT1
+PORT2=$PORT2
+PORT3=$PORT3
+
+# 其他配置项
+WORKDIR=${WORKDIR}
+LOG_LEVEL=info
+EOF
+
+    echo -e "\e[1;32m保活服务配置文件 .env 已生成，支持端口: $PORT1, $PORT2, $PORT3\e[0m"
+}
+
 UUID=${UUID}
 SUB_TOKEN=${SUB_TOKEN}
 TELEGRAM_CHAT_ID=${CHAT_ID}
@@ -369,7 +276,6 @@ NAME=$ISP-$(get_name)-tuic
 
 echo -e "\e[1;32mTuic安装成功\033[0m\n"
 echo -e "\e[1;33mV2rayN 或 Nekobox等直接可以导入使用,跳过证书验证需设置为true\033[0m\n"
-
 cat > ${FILE_PATH}/${SUB_TOKEN}_tuic.log <<EOF
 tuic://$UUID:$PASSWORD@$HOST_IP:$PORT?congestion_control=bbr&alpn=h3&sni=www.bing.com&udp_relay_mode=native&allow_insecure=1#$NAME
 EOF
