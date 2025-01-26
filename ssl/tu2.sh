@@ -23,19 +23,28 @@ check_binexec_and_port () {
   if [[ $udp_ports -lt 1 ]]; then
       echo -e "\e[1;91m没有可用的UDP端口,正在调整...\e[0m"
 
+      # 如果没有UDP端口且有足够TCP端口，删除一个TCP端口
       if [[ $tcp_ports -ge 3 ]]; then
           tcp_port_to_delete=$(echo "$port_list" | awk '/tcp/ {print $1}' | head -n 1)
           devil port del tcp $tcp_port_to_delete
           echo -e "\e[1;32m已删除TCP端口: $tcp_port_to_delete\e[0m"
       fi
 
-      while true; do
+      # 添加三个UDP端口
+      udp_ports_assigned=0
+      while [[ $udp_ports_assigned -lt 3 ]]; do
           udp_port=$(shuf -i 10000-65535 -n 1)
           result=$(devil port add udp $udp_port 2>&1)
           if [[ $result == *"succesfully"* ]]; then
-              echo -e "\e[1;32m已添加UDP端口: $udp_port"
-              udp_port1=$udp_port
-              break
+              echo -e "\e[1;32m已添加UDP端口: $udp_port\e[0m"
+              if [[ $udp_ports_assigned -eq 0 ]]; then
+                  udp_port1=$udp_port
+              elif [[ $udp_ports_assigned -eq 1 ]]; then
+                  udp_port2=$udp_port
+              elif [[ $udp_ports_assigned -eq 2 ]]; then
+                  udp_port3=$udp_port
+              fi
+              ((udp_ports_assigned++))
           else
               echo -e "\e[1;33m端口 $udp_port 不可用，尝试其他端口...\e[0m"
           fi
@@ -45,15 +54,37 @@ check_binexec_and_port () {
       devil binexec on >/dev/null 2>&1
       kill -9 $(ps -o ppid= -p $$) >/dev/null 2>&1
   else
-      udp_ports=$(echo "$port_list" | awk '/udp/ {print $1}')
-      udp_port1=$(echo "$udp_ports" | sed -n '1p')
+      # 从现有的 UDP 端口列表中获取第一个、第二个和第三个端口
+      udp_ports=($(echo "$port_list" | awk '/udp/ {print $1}'))
 
-      echo -e "\e[1;35m当前UDP端口: $udp_port1\e[0m"
+      udp_port1=${udp_ports[0]}
+      udp_port2=${udp_ports[1]:-$((udp_port1 + 1))}
+      udp_port3=${udp_ports[2]:-$((udp_port2 + 1))}
+
+      # 如果只有部分端口存在，补齐剩余端口
+      while [[ -z $udp_port3 ]]; do
+          udp_port=$(shuf -i 10000-65535 -n 1)
+          result=$(devil port add udp $udp_port 2>&1)
+          if [[ $result == *"succesfully"* ]]; then
+              if [[ -z $udp_port2 ]]; then
+                  udp_port2=$udp_port
+              else
+                  udp_port3=$udp_port
+              fi
+              echo -e "\e[1;32m已补充UDP端口: $udp_port\e[0m"
+          else
+              echo -e "\e[1;33m端口 $udp_port 不可用，尝试其他端口...\e[0m"
+          fi
+      done
+
+      echo -e "\e[1;35m当前UDP端口: $udp_port1, $udp_port2, $udp_port3\e[0m"
   fi
 
-  export PORT=$udp_port1
+  export PORT1=$udp_port1
+  export PORT2=$udp_port2
+  export PORT3=$udp_port3
 }
-check_binexec_and_port
+
 
 clear
 echo -e "\e[1;35m正在安装中,请稍等...\e[0m"
@@ -114,14 +145,10 @@ wait
 # Generate cert
 openssl req -x509 -nodes -newkey ec:<(openssl ecparam -name prime256v1) -keyout $WORKDIR/server.key -out $WORKDIR/server.crt -subj "/CN=bing.com" -days 36500
 
-# Generate configuration files for each port
-for i in {1..3}; do
-  PORT_VAR="PORT$i"
-  PORT_VAL="${!PORT_VAR}"  # 获取动态变量的值，PORT1, PORT2, PORT3
-
-  cat > "config_port${i}.json" <<EOL
+# Generate configuration file
+cat > config.json <<EOL
 {
-  "server": "[::]:$PORT_VAL",
+  "server": "[::]:$PORT1,[::]:$PORT2,[::]:$PORT3",
   "users": {
     "$UUID": "$PASSWORD"
   },
@@ -141,10 +168,6 @@ for i in {1..3}; do
   "log_level": "warn"
 }
 EOL
-
-  echo -e "\e[1;32m配置文件 config_port${i}.json 已生成，端口: $PORT_VAL\e[0m"
-done
-
 
 install_keepalive () {
     echo -e "\n\e[1;35m正在安装保活服务中,请稍等......\e[0m"
@@ -199,53 +222,31 @@ EOF
 }
 
 run() {
-  # 检查 npm 文件是否存在
   if [ -e "$(basename ${FILE_MAP[npm]})" ]; then
     tlsPorts=("443" "8443" "2096" "2087" "2083" "2053")
-    
-    # 根据端口选择是否启用 TLS
-    for port in "$PORT1" "$PORT2" "$PORT3"; do
-      if [[ "${tlsPorts[*]}" =~ "${port}" ]]; then
-        NEZHA_TLS="--tls"
-      else
-        NEZHA_TLS=""
-      fi
-
-      # 检查 Nezha 变量是否为空并启动对应的服务
-      if [ -n "$NEZHA_SERVER" ] && [ -n "$NEZHA_PORT" ] && [ -n "$NEZHA_KEY" ]; then
-        export TMPDIR=$(pwd)
-        nohup ./"$(basename ${FILE_MAP[npm]})" -s ${NEZHA_SERVER}:${port} -p ${NEZHA_KEY} ${NEZHA_TLS} >/dev/null 2>&1 &
-        sleep 1
-        pgrep -x "$(basename ${FILE_MAP[npm]})" > /dev/null && echo -e "\e[1;32m$(basename ${FILE_MAP[npm]}) is running on port $port\e[0m" || { 
-          echo -e "\e[1;35m$(basename ${FILE_MAP[npm]}) is not running on port $port, restarting...\e[0m"
-          pkill -f "$(basename ${FILE_MAP[npm]})"
-          nohup ./"$(basename ${FILE_MAP[npm]})" -s ${NEZHA_SERVER}:${port} -p ${NEZHA_KEY} ${NEZHA_TLS} >/dev/null 2>&1 &
-          sleep 2
-          echo -e "\e[1;32m$(basename ${FILE_MAP[npm]}) restarted on port $port\e[0m"
-        }
-      else
-        echo -e "\e[1;35mNEZHA variable is empty, skipping running for port $port\e[0m"
-      fi
-    done
+    if [[ "${tlsPorts[*]}" =~ "${NEZHA_PORT}" ]]; then
+      NEZHA_TLS="--tls"
+    else
+      NEZHA_TLS=""
+    fi
+    if [ -n "$NEZHA_SERVER" ] && [ -n "$NEZHA_PORT" ] && [ -n "$NEZHA_KEY" ]; then
+      export TMPDIR=$(pwd)
+      nohup ./"$(basename ${FILE_MAP[npm]})" -s ${NEZHA_SERVER}:${NEZHA_PORT} -p ${NEZHA_KEY} ${NEZHA_TLS} >/dev/null 2>&1 &
+      sleep 1
+      pgrep -x "$(basename ${FILE_MAP[npm]})" > /dev/null && echo -e "\e[1;32m$(basename ${FILE_MAP[npm]}) is running\e[0m" || { echo -e "\e[1;35m$(basename ${FILE_MAP[npm]}) is not running, restarting...\e[0m"; pkill -f "$(basename ${FILE_MAP[npm]})" && nohup ./"$(basename ${FILE_MAP[npm]})" -s ${NEZHA_SERVER}:${NEZHA_PORT} -p ${NEZHA_KEY} ${NEZHA_TLS} >/dev/null 2>&1 & sleep 2; echo -e "\e[1;32m"$(basename ${FILE_MAP[npm]})" restarted\e[0m"; }
+    else
+      echo -e "\e[1;35mNEZHA variable is empty, skipping running\e[0m"
+    fi
   fi
 
-  # 检查 web 文件是否存在并启动
   if [ -e "$(basename ${FILE_MAP[web]})" ]; then
     nohup ./"$(basename ${FILE_MAP[web]})" -c config.json >/dev/null 2>&1 &
     sleep 1
-    pgrep -x "$(basename ${FILE_MAP[web]})" > /dev/null && echo -e "\e[1;32m$(basename ${FILE_MAP[web]}) is running\e[0m" || { 
-      echo -e "\e[1;35m$(basename ${FILE_MAP[web]}) is not running, restarting...\e[0m"
-      pkill -f "$(basename ${FILE_MAP[web]})"
-      nohup ./"$(basename ${FILE_MAP[web]})" -c config.json >/dev/null 2>&1 &
-      sleep 2
-      echo -e "\e[1;32m$(basename ${FILE_MAP[web]}) restarted\e[0m"
-    }
+    pgrep -x "$(basename ${FILE_MAP[web]})" > /dev/null && echo -e "\e[1;32m$(basename ${FILE_MAP[web]}) is running\e[0m" || { echo -e "\e[1;35m$(basename ${FILE_MAP[web]}) is not running, restarting...\e[0m"; pkill -f "$(basename ${FILE_MAP[web]})" && nohup ./"$(basename ${FILE_MAP[web]})" -c config.json >/dev/null 2>&1 & sleep 2; echo -e "\e[1;32m$(basename ${FILE_MAP[web]}) restarted\e[0m"; }
   fi
-
-  # 清理临时文件
-  rm -rf "$(basename ${FILE_MAP[web]})" "$(basename ${FILE_MAP[npm]})"
+rm -rf "$(basename ${FILE_MAP[web]})" "$(basename ${FILE_MAP[npm]})"
 }
-
+run
 
 get_ip() {
   IP_LIST=($(devil vhost list | awk '/^[0-9]+/ {print $1}'))
