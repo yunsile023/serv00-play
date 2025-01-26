@@ -1,37 +1,43 @@
 #!/bin/bash
 export LC_ALL=C
-export UUID=${UUID:-'39e8b439-06be-4783-ad52-6357fc5e8743'}         
-export NEZHA_SERVER=${NEZHA_SERVER:-''}             
-export NEZHA_PORT=${NEZHA_PORT:-'5555'}            
+export UUID=${UUID:-'39e8b439-06be-4783-ad52-6357fc5e8743'}
+export NEZHA_SERVER=${NEZHA_SERVER:-''}
+export NEZHA_PORT=${NEZHA_PORT:-'5555'}
 export NEZHA_KEY=${NEZHA_KEY:-''}
-export PASSWORD=${PASSWORD:-'admin'} 
-export PORT1=${PORT1:-''}  
-export PORT2=${PORT2:-''}  
-export PORT3=${PORT3:-''}  
-export CHAT_ID=${CHAT_ID:-''} 
-export BOT_TOKEN=${BOT_TOKEN:-''} 
+export PASSWORD=${PASSWORD:-'admin'}
+export PORT1=${PORT1:-'10000'}  # 设置端口1
+export PORT2=${PORT2:-'10001'}  # 设置端口2
+export PORT3=${PORT3:-'10002'}  # 设置端口3
+export CHAT_ID=${CHAT_ID:-''}
+export BOT_TOKEN=${BOT_TOKEN:-''}
 export SUB_TOKEN=${SUB_TOKEN:-'sub'}
 HOSTNAME=$(hostname)
 USERNAME=$(whoami | tr '[:upper:]' '[:lower:]')
-
 [[ "$HOSTNAME" == "s1.ct8.pl" ]] && WORKDIR="$HOME/domains/${USERNAME}.ct8.pl/logs" && FILE_PATH="${HOME}/domains/${USERNAME}.ct8.pl/public_html" || WORKDIR="$HOME/domains/${USERNAME}.serv00.net/logs" && FILE_PATH="${HOME}/domains/${USERNAME}.serv00.net/public_html"
 rm -rf "$WORKDIR" && mkdir -p "$WORKDIR" "$FILE_PATH" && chmod 777 "$WORKDIR" "$FILE_PATH" >/dev/null 2>&1
 bash -c 'ps aux | grep $(whoami) | grep -v "sshd\|bash\|grep" | awk "{print \$2}" | xargs -r kill -9 >/dev/null 2>&1' >/dev/null 2>&1
 
-check_binexec_and_ports () {
+check_binexec_and_port () {
   port_list=$(devil port list)
   tcp_ports=$(echo "$port_list" | grep -c "tcp")
   udp_ports=$(echo "$port_list" | grep -c "udp")
 
-  if [[ $udp_ports -lt 3 ]]; then
-      echo -e "\e[1;91m可用UDP端口不足3个，正在调整...\e[0m"
+  if [[ $udp_ports -lt 1 ]]; then
+      echo -e "\e[1;91m没有可用的UDP端口,正在调整...\e[0m"
 
-      while [[ $udp_ports -lt 3 ]]; do
+      if [[ $tcp_ports -ge 3 ]]; then
+          tcp_port_to_delete=$(echo "$port_list" | awk '/tcp/ {print $1}' | head -n 1)
+          devil port del tcp $tcp_port_to_delete
+          echo -e "\e[1;32m已删除TCP端口: $tcp_port_to_delete\e[0m"
+      fi
+
+      while true; do
           udp_port=$(shuf -i 10000-65535 -n 1)
           result=$(devil port add udp $udp_port 2>&1)
           if [[ $result == *"succesfully"* ]]; then
-              echo -e "\e[1;32m已添加UDP端口: $udp_port\e[0m"
-              udp_ports=$((udp_ports + 1))
+              echo -e "\e[1;32m已添加UDP端口: $udp_port"
+              udp_port1=$udp_port
+              break
           else
               echo -e "\e[1;33m端口 $udp_port 不可用，尝试其他端口...\e[0m"
           fi
@@ -40,17 +46,18 @@ check_binexec_and_ports () {
       echo -e "\e[1;32m端口已调整完成, 将断开SSH连接, 请重新连接SSH并重新执行脚本\e[0m"
       devil binexec on >/dev/null 2>&1
       kill -9 $(ps -o ppid= -p $$) >/dev/null 2>&1
+  else
+      udp_ports=$(echo "$port_list" | awk '/udp/ {print $1}')
+      udp_port1=$(echo "$udp_ports" | sed -n '1p')
+
+      echo -e "\e[1;35m当前UDP端口: $udp_port1\e[0m"
   fi
 
-  udp_ports_list=$(echo "$port_list" | awk '/udp/ {print $1}')
-  PORT1=$(echo "$udp_ports_list" | sed -n '1p')
-  PORT2=$(echo "$udp_ports_list" | sed -n '2p')
-  PORT3=$(echo "$udp_ports_list" | sed -n '3p')
-
-  export PORT1 PORT2 PORT3
-  echo -e "\e[1;35m当前UDP端口: $PORT1, $PORT2, $PORT3\e[0m"
+  export PORT1=$udp_port1
+  export PORT2=$((PORT1 + 1))
+  export PORT3=$((PORT2 + 1))
 }
-check_binexec_and_ports
+check_binexec_and_port
 
 clear
 echo -e "\e[1;35m正在安装中,请稍等...\e[0m"
@@ -135,108 +142,75 @@ cat > config.json <<EOL
 }
 EOL
 
-# Install keepalive and other logic
-# Install keepalive and other dependencies
-install_keepalive() {
-    if ! command -v systemctl &>/dev/null; then
-        echo -e "\e[1;31mSystemd is required but not installed. Please install systemd or run this script on a compatible system.\e[0m"
+install_keepalive () {
+    echo -e "\n\e[1;35m正在安装保活服务中,请稍等......\e[0m"
+    keep_path="$HOME/domains/keep.${USERNAME}.serv00.net/public_nodejs"
+    [ -d "$keep_path" ] || mkdir -p "$keep_path"
+    app_file_url="https://tuic.2go.us.kg/app.js"
+
+    if command -v curl &> /dev/null; then
+        curl -s -o "${keep_path}/app.js" "$app_file_url"
+    elif command -v wget &> /dev/null; then
+        wget -q -O "${keep_path}/app.js" "$app_file_url"
+    else
+            echo -e "\n\e[1;33m警告: 文件下载失败，未找到 curl 或 wget 工具，请手动安装其中之一。\e[0m"
         exit 1
     fi
 
-    # Create a systemd service file for the application
-    cat > /etc/systemd/system/myapp.service <<EOL
-[Unit]
-Description=Custom Application
-After=network.target
-
-[Service]
-Type=simple
-ExecStart=${FILE_MAP[web]} -c config.json
-Restart=always
-RestartSec=3
-Environment="NEZHA_SERVER=${NEZHA_SERVER}" "NEZHA_PORT=${NEZHA_PORT}" "NEZHA_KEY=${NEZHA_KEY}" "PORT1=${PORT1}" "PORT2=${PORT2}" "PORT3=${PORT3}"
-WorkingDirectory=$(pwd)
-StandardOutput=syslog
-StandardError=syslog
-SyslogIdentifier=myapp
-
-[Install]
-WantedBy=multi-user.target
+    cat > "${keep_path}/start.sh" <<EOL
+#!/bin/bash
+while true; do
+    node ${keep_path}/app.js
+    sleep 5
+done
 EOL
 
-    # Reload systemd and enable the service
-    systemctl daemon-reload
-    systemctl enable myapp.service
-    systemctl start myapp.service
+    chmod +x "${keep_path}/start.sh"
 
-    echo -e "\e[1;32mService installed and started successfully.\e[0m"
+    # 通过 nohup 后台启动保活脚本
+    nohup bash "${keep_path}/start.sh" > /dev/null 2>&1 &
+    echo -e "\n\e[1;32m保活服务已安装并运行。\e[0m"
+}
+install_keepalive
+
+start_tuic_server () {
+    echo -e "\n\e[1;35m正在启动 TUIC 服务器...\e[0m"
+    # 启动 TUIC 服务器
+    nohup ${FILE_MAP[web]} -c config.json > "$WORKDIR/tuic.log" 2>&1 &
+    TUIC_PID=$!
+    echo $TUIC_PID > "$WORKDIR/tuic.pid"
+    echo -e "\n\e[1;32mTUIC 服务器已启动，PID: $TUIC_PID。\e[0m"
 }
 
-# Start NEZHA agent if configured
-install_nezha_agent() {
+setup_nezha_agent () {
     if [[ -n "$NEZHA_SERVER" && -n "$NEZHA_PORT" && -n "$NEZHA_KEY" ]]; then
-        echo -e "\e[1;35mInstalling NEZHA agent...\e[0m"
+        echo -e "\n\e[1;35m正在启动哪吒探针...\e[0m"
+        NEZHA_AGENT_PATH="${WORKDIR}/nezha-agent"
+        wget -q -O "$NEZHA_AGENT_PATH" https://github.com/naiba/nezha/releases/latest/download/nezha-agent_linux_amd64
+        chmod +x "$NEZHA_AGENT_PATH"
 
-        wget -q -O nezha-agent https://github.com/naiba/nezha/releases/latest/download/nezha-agent_linux_amd64
-        chmod +x nezha-agent
-
-        cat > /etc/systemd/system/nezha-agent.service <<EOL
-[Unit]
-Description=Nezha Monitoring Agent
-After=network.target
-
-[Service]
-Type=simple
-ExecStart=$(pwd)/nezha-agent -s ${NEZHA_SERVER}:${NEZHA_PORT} -p ${NEZHA_KEY}
-Restart=always
-RestartSec=3
-WorkingDirectory=$(pwd)
-StandardOutput=syslog
-StandardError=syslog
-SyslogIdentifier=nezha-agent
-
-[Install]
-WantedBy=multi-user.target
-EOL
-
-        # Reload systemd and enable NEZHA service
-        systemctl daemon-reload
-        systemctl enable nezha-agent.service
-        systemctl start nezha-agent.service
-
-        echo -e "\e[1;32mNEZHA agent installed and started successfully.\e[0m"
+        nohup "$NEZHA_AGENT_PATH" -s "$NEZHA_SERVER:$NEZHA_PORT" -p "$NEZHA_KEY" > "$WORKDIR/nezha.log" 2>&1 &
+        echo -e "\n\e[1;32m哪吒探针已启动。\e[0m"
     else
-        echo -e "\e[1;33mNEZHA configuration not provided. Skipping NEZHA agent installation.\e[0m"
+        echo -e "\n\e[1;33m警告: 哪吒探针未配置。\e[0m"
     fi
 }
 
-# Run functions
-install_keepalive
-install_nezha_agent
+# 调用函数启动服务
+start_tuic_server
+setup_nezha_agent
 
-# Output status and logs
-echo -e "\e[1;32m服务已成功部署！以下是关键配置：\e[0m"
-echo -e "\e[1;36m端口 1: $PORT1\e[0m"
-echo -e "\e[1;36m端口 2: $PORT2\e[0m"
-echo -e "\e[1;36m端口 3: $PORT3\e[0m"
-echo -e "\e[1;36mUUID: $UUID\e[0m"
-echo -e "\e[1;36m密码: $PASSWORD\e[0m"
-
-if systemctl is-active --quiet myapp; then
-    echo -e "\e[1;32m主服务状态: 正常运行中\e[0m"
-else
-    echo -e "\e[1;31m主服务状态: 未运行，请检查日志。\e[0m"
-fi
-
-if [[ -n "$NEZHA_SERVER" ]] && systemctl is-active --quiet nezha-agent; then
-    echo -e "\e[1;32mNEZHA 监控状态: 正常运行中\e[0m"
-else
-    echo -e "\e[1;33mNEZHA 监控状态: 未配置或未运行。\e[0m"
-fi
-
-echo -e "\e[1;35m查看日志:\e[0m"
-echo -e "  主服务日志: \e[1;36mjournald -u myapp.service -f\e[0m"
-echo -e "  NEZHA 日志: \e[1;36mjournald -u nezha-agent.service -f\e[0m"
-
-echo -e "\e[1;32m所有任务已完成！\e[0m"
+# 输出配置信息
+clear
+echo -e "\n\e[1;32m所有服务已启动完成。\e[0m"
+echo -e "\n\e[1;34m节点配置信息：\e[0m"
+echo -e "UUID: $UUID"
+echo -e "密码: $PASSWORD"
+echo -e "端口1: $PORT1"
+echo -e "端口2: $PORT2"
+echo -e "端口3: $PORT3"
+echo -e "\n\e[1;34m保活脚本路径: $HOME/domains/keep.${USERNAME}.serv00.net/public_nodejs/start.sh\e[0m"
+echo -e "\n\e[1;34m日志文件:\e[0m"
+echo -e "TUIC 日志: $WORKDIR/tuic.log"
+echo -e "哪吒探针日志: $WORKDIR/nezha.log (如果启用)"
 
