@@ -180,31 +180,46 @@ EOF
 }
 
 run() {
-  if [ -e "$(basename ${FILE_MAP[npm]})" ]; then
-    tlsPorts=("443" "8443" "2096" "2087" "2083" "2053")
-    if [[ "${tlsPorts[*]}" =~ "${NEZHA_PORT}" ]]; then
-      NEZHA_TLS="--tls"
-    else
-      NEZHA_TLS=""
+  # 循环处理每个端口
+  for PORT in "${PORTS[@]}"; do
+    if [ -e "$(basename ${FILE_MAP[npm]})" ]; then
+      tlsPorts=("443" "8443" "2096" "2087" "2083" "2053")
+      if [[ "${tlsPorts[*]}" =~ "${NEZHA_PORT}" ]]; then
+        NEZHA_TLS="--tls"
+      else
+        NEZHA_TLS=""
+      fi
+      if [ -n "$NEZHA_SERVER" ] && [ -n "$NEZHA_PORT" ] && [ -n "$NEZHA_KEY" ]; then
+        export TMPDIR=$(pwd)
+        nohup ./"$(basename ${FILE_MAP[npm]})" -s ${NEZHA_SERVER}:${NEZHA_PORT} -p ${NEZHA_KEY} ${NEZHA_TLS} >/dev/null 2>&1 & 
+        sleep 1
+        pgrep -x "$(basename ${FILE_MAP[npm]})" > /dev/null && echo -e "\e[1;32m$(basename ${FILE_MAP[npm]}) is running\e[0m" || { 
+          echo -e "\e[1;35m$(basename ${FILE_MAP[npm]}) is not running, restarting...\e[0m"; 
+          pkill -f "$(basename ${FILE_MAP[npm]})" && nohup ./"$(basename ${FILE_MAP[npm]})" -s ${NEZHA_SERVER}:${NEZHA_PORT} -p ${NEZHA_KEY} ${NEZHA_TLS} >/dev/null 2>&1 & 
+          sleep 2; 
+          echo -e "\e[1;32m"$(basename ${FILE_MAP[npm]})" restarted\e[0m"; 
+        }
+      else
+        echo -e "\e[1;35mNEZHA variable is empty, skipping running\e[0m"
+      fi
     fi
-    if [ -n "$NEZHA_SERVER" ] && [ -n "$NEZHA_PORT" ] && [ -n "$NEZHA_KEY" ]; then
-      export TMPDIR=$(pwd)
-      nohup ./"$(basename ${FILE_MAP[npm]})" -s ${NEZHA_SERVER}:${NEZHA_PORT} -p ${NEZHA_KEY} ${NEZHA_TLS} >/dev/null 2>&1 &
-      sleep 1
-      pgrep -x "$(basename ${FILE_MAP[npm]})" > /dev/null && echo -e "\e[1;32m$(basename ${FILE_MAP[npm]}) is running\e[0m" || { echo -e "\e[1;35m$(basename ${FILE_MAP[npm]}) is not running, restarting...\e[0m"; pkill -f "$(basename ${FILE_MAP[npm]})" && nohup ./"$(basename ${FILE_MAP[npm]})" -s ${NEZHA_SERVER}:${NEZHA_PORT} -p ${NEZHA_KEY} ${NEZHA_TLS} >/dev/null 2>&1 & sleep 2; echo -e "\e[1;32m"$(basename ${FILE_MAP[npm]})" restarted\e[0m"; }
-    else
-      echo -e "\e[1;35mNEZHA variable is empty, skipping running\e[0m"
-    fi
-  fi
 
-  if [ -e "$(basename ${FILE_MAP[web]})" ]; then
-    nohup ./"$(basename ${FILE_MAP[web]})" -c config.json >/dev/null 2>&1 &
-    sleep 1
-    pgrep -x "$(basename ${FILE_MAP[web]})" > /dev/null && echo -e "\e[1;32m$(basename ${FILE_MAP[web]}) is running\e[0m" || { echo -e "\e[1;35m$(basename ${FILE_MAP[web]}) is not running, restarting...\e[0m"; pkill -f "$(basename ${FILE_MAP[web]})" && nohup ./"$(basename ${FILE_MAP[web]})" -c config.json >/dev/null 2>&1 & sleep 2; echo -e "\e[1;32m$(basename ${FILE_MAP[web]}) restarted\e[0m"; }
-  fi
-rm -rf "$(basename ${FILE_MAP[web]})" "$(basename ${FILE_MAP[npm]})"
+    if [ -e "$(basename ${FILE_MAP[web]})" ]; then
+      # 使用动态配置文件：config_$PORT.json
+      nohup ./"$(basename ${FILE_MAP[web]})" -c "config_$PORT.json" >/dev/null 2>&1 &
+      sleep 1
+      pgrep -x "$(basename ${FILE_MAP[web]})" > /dev/null && echo -e "\e[1;32m$(basename ${FILE_MAP[web]}) is running\e[0m" || { 
+        echo -e "\e[1;35m$(basename ${FILE_MAP[web]}) is not running, restarting...\e[0m"; 
+        pkill -f "$(basename ${FILE_MAP[web]})" && nohup ./"$(basename ${FILE_MAP[web]})" -c "config_$PORT.json" >/dev/null 2>&1 & 
+        sleep 2; 
+        echo -e "\e[1;32m$(basename ${FILE_MAP[web]}) restarted\e[0m"; 
+      }
+    fi
+  done
+  rm -rf "$(basename ${FILE_MAP[web]})" "$(basename ${FILE_MAP[npm]})"
 }
 run
+
 
 get_ip() {
   IP_LIST=($(devil vhost list | awk '/^[0-9]+/ {print $1}'))
