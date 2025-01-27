@@ -1,86 +1,13 @@
 #!/bin/bash
 export LC_ALL=C
-export UUID=${UUID:-'39e8b439-06be-4783-ad52-6357fc5e8743'}         
-export NEZHA_SERVER=${NEZHA_SERVER:-''}             
-export NEZHA_PORT=${NEZHA_PORT:-'5555'}            
+export UUID=${UUID:-'87bf5ca0-6d29-434e-bf3c-4ef66e68d1c8'}
+export NEZHA_SERVER=${NEZHA_SERVER:-''}
+export NEZHA_PORT=${NEZHA_PORT:-'5555'}
 export NEZHA_KEY=${NEZHA_KEY:-''}
-export PASSWORD=${PASSWORD:-'admin'} 
-export PORT=${PORT:-''}  
-export CHAT_ID=${CHAT_ID:-''} 
-export BOT_TOKEN=${BOT_TOKEN:-''} 
-export SUB_TOKEN=${SUB_TOKEN:-'sub'}
+export PASSWORD=${PASSWORD:-'admin'}
+PORTS=(49477 51996 61757)  # 定义三个端口
 USERNAME=$(whoami)
 HOSTNAME=$(hostname)
-
-check_binexec_and_port () {
-  port_list=$(devil port list)
-  tcp_ports=$(echo "$port_list" | grep -c "tcp")
-  udp_ports=$(echo "$port_list" | grep -c "udp")
-
-  if [[ $udp_ports -lt 1 ]]; then
-      echo -e "\e[1;91m没有可用的UDP端口,正在调整...\e[0m"
-
-      # 如果没有UDP端口且有足够TCP端口，删除一个TCP端口
-      if [[ $tcp_ports -ge 3 ]]; then
-          tcp_port_to_delete=$(echo "$port_list" | awk '/tcp/ {print $1}' | head -n 1)
-          devil port del tcp $tcp_port_to_delete
-          echo -e "\e[1;32m已删除TCP端口: $tcp_port_to_delete\e[0m"
-      fi
-
-      # 添加三个UDP端口
-      udp_ports_assigned=0
-      while [[ $udp_ports_assigned -lt 3 ]]; do
-          udp_port=$(shuf -i 10000-65535 -n 1)
-          result=$(devil port add udp $udp_port 2>&1)
-          if [[ $result == *"succesfully"* ]]; then
-              echo -e "\e[1;32m已添加UDP端口: $udp_port\e[0m"
-              if [[ $udp_ports_assigned -eq 0 ]]; then
-                  udp_port1=$udp_port
-              elif [[ $udp_ports_assigned -eq 1 ]]; then
-                  udp_port2=$udp_port
-              elif [[ $udp_ports_assigned -eq 2 ]]; then
-                  udp_port3=$udp_port
-              fi
-              ((udp_ports_assigned++))
-          else
-              echo -e "\e[1;33m端口 $udp_port 不可用，尝试其他端口...\e[0m"
-          fi
-      done
-
-      echo -e "\e[1;32m端口已调整完成, 将断开SSH连接, 请重新连接SSH并重新执行脚本\e[0m"
-      devil binexec on >/dev/null 2>&1
-      kill -9 $(ps -o ppid= -p $$) >/dev/null 2>&1
-  else
-      # 从现有的 UDP 端口列表中获取第一个、第二个和第三个端口
-      udp_ports=($(echo "$port_list" | awk '/udp/ {print $1}'))
-
-      udp_port1=${udp_ports[0]}
-      udp_port2=${udp_ports[1]:-$((udp_port1 + 1))}
-      udp_port3=${udp_ports[2]:-$((udp_port2 + 1))}
-
-      # 如果只有部分端口存在，补齐剩余端口
-      while [[ -z $udp_port3 ]]; do
-          udp_port=$(shuf -i 10000-65535 -n 1)
-          result=$(devil port add udp $udp_port 2>&1)
-          if [[ $result == *"succesfully"* ]]; then
-              if [[ -z $udp_port2 ]]; then
-                  udp_port2=$udp_port
-              else
-                  udp_port3=$udp_port
-              fi
-              echo -e "\e[1;32m已补充UDP端口: $udp_port\e[0m"
-          else
-              echo -e "\e[1;33m端口 $udp_port 不可用，尝试其他端口...\e[0m"
-          fi
-      done
-
-      echo -e "\e[1;35m当前UDP端口: $udp_port1, $udp_port2, $udp_port3\e[0m"
-  fi
-
-  export PORT1=$udp_port1
-  export PORT2=$udp_port2
-  export PORT3=$udp_port3
-}
 
 [[ "$HOSTNAME" == "s1.ct8.pl" ]] && WORKDIR="domains/${USERNAME}.ct8.pl/logs" || WORKDIR="domains/${USERNAME}.serv00.net/logs"
 [ -d "$WORKDIR" ] || (mkdir -p "$WORKDIR" && chmod 777 "$WORKDIR" && cd "$WORKDIR")
