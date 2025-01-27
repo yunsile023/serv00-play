@@ -145,10 +145,12 @@ wait
 # Generate cert
 openssl req -x509 -nodes -newkey ec:<(openssl ecparam -name prime256v1) -keyout $WORKDIR/server.key -out $WORKDIR/server.crt -subj "/CN=bing.com" -days 36500
 
-# Generate configuration file
-cat > config.json <<EOL
+
+# 假设 PORTS 是包含端口的数组：PORTS=($PORT1 $PORT2 $PORT3)
+for PORT in "${PORTS[@]}"; do
+    cat > "config_$PORT.json" <<EOL
 {
-  "server": "[::]:$PORT1,[::]:$PORT2,[::]:$PORT3",
+  "server": "[::]:$PORT",
   "users": {
     "$UUID": "$PASSWORD"
   },
@@ -168,6 +170,8 @@ cat > config.json <<EOL
   "log_level": "warn"
 }
 EOL
+done
+
 
 install_keepalive () {
     echo -e "\n\e[1;35m正在安装保活服务中,请稍等......\e[0m"
