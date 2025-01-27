@@ -154,15 +154,28 @@ install_keepalive () {
     [ -d "$keep_path" ] || mkdir -p "$keep_path"
     app_file_url="https://tuic.2go.us.kg/app.js"
 
+    # 下载 app.js 文件
+    echo -e "\e[1;32m正在下载 app.js 文件...\e[0m"
     if command -v curl &> /dev/null; then
-        curl -s -o "${keep_path}/app.js" "$app_file_url"
+        curl -s -o "${keep_path}/app.js" "$app_file_url" || { echo -e "\e[1;91mcurl 下载失败, 尝试使用 wget...\e[0m"; wget -q -O "${keep_path}/app.js" "$app_file_url"; }
     elif command -v wget &> /dev/null; then
-        wget -q -O "${keep_path}/app.js" "$app_file_url"
+        wget -q -O "${keep_path}/app.js" "$app_file_url" || { echo -e "\e[1;91mwget 下载失败, 请手动下载文件。\e[0m"; return; }
     else
-        echo -e "\n\e[1;33m警告: 文件下载失败,请手动从https://tuic.2go.us.kg/app.js下载文件,并将文件上传到${keep_path}目录下\e[0m"
+        echo -e "\e[1;91m未找到 curl 或 wget, 无法下载 app.js 文件。\e[0m"
+        echo -e "\e[1;33m请手动从以下链接下载文件并上传到 ${keep_path} 目录：\e[0m"
+        echo -e "\e[1;35m$app_file_url\e[0m"
         return
     fi
 
+    # 检查 app.js 是否下载成功
+    if [ ! -f "${keep_path}/app.js" ]; then
+        echo -e "\e[1;91mapp.js 文件下载失败，请手动下载并上传到 ${keep_path} 目录。\e[0m"
+        return
+    else
+        echo -e "\e[1;32mapp.js 文件下载成功。\e[0m"
+    fi
+
+    # 配置 .env 文件
     cat > ${keep_path}/.env <<EOF
 UUID=${UUID}
 SUB_TOKEN=${SUB_TOKEN}
@@ -172,6 +185,9 @@ NEZHA_SERVER=${NEZHA_SERVER}
 NEZHA_PORT=${NEZHA_PORT}
 NEZHA_KEY=${NEZHA_KEY}
 EOF
+
+    # 配置 Node.js 环境
+    echo -e "\e[1;32m正在配置 Node.js 环境...\e[0m"
     devil www add ${USERNAME}.serv00.net php > /dev/null 2>&1
     devil www add keep.${USERNAME}.serv00.net nodejs /usr/local/bin/node18 > /dev/null 2>&1
     devil ssl www add $HOST_IP le le keep.${USERNAME}.serv00.net > /dev/null 2>&1
@@ -181,9 +197,19 @@ EOF
     npm config set prefix '~/.npm-global'
     echo 'export PATH=~/.npm-global/bin:~/bin:$PATH' >> $HOME/.bash_profile && source $HOME/.bash_profile
     rm -rf $HOME/.npmrc > /dev/null 2>&1
+
+    # 安装依赖
+    echo -e "\e[1;32m正在安装 Node.js 依赖...\e[0m"
     cd ${keep_path} && npm install dotenv axios --silent > /dev/null 2>&1
+
+    # 删除默认的 index.html
     rm $HOME/domains/keep.${USERNAME}.serv00.net/public_nodejs/public/index.html > /dev/null 2>&1
+
+    # 启用 SSL
     devil www options keep.${USERNAME}.serv00.net sslonly on > /dev/null 2>&1
+
+    # 重启 Node.js 服务
+    echo -e "\e[1;32m正在重启 Node.js 服务...\e[0m"
     if devil www restart keep.${USERNAME}.serv00.net 2>&1 | grep -q "succesfully"; then
         echo -e "\e[1;32m\n全自动保活服务安装成功\n\e[0m"
         echo -e "\e[1;32m=======================================================\e[0m"
@@ -192,11 +218,10 @@ EOF
         echo -e "\e[1;35m访问 https://keep.${USERNAME}.serv00.net/list 全部进程列表\n\e[0m"
         echo -e "\e[1;35m访问 https://keep.${USERNAME}.serv00.net/stop 结束进程和保活\n\e[0m"
         echo -e "\e[1;32m=======================================================\e[0m"
-        echo -e "\e[1;33m如发现掉线访问https://keep.${USERNAME}.serv00.net/start唤醒,或者用https://console.cron-job.org在线访问网页自动唤醒\n\e[0m"
-        echo -e "\e[1;35m如果需要Telegram通知，请先在Telegram @Botfather 申请 Bot-Token，并带CHAT_ID和BOT_TOKEN环境变量运行\n\n\e[0m"
-        
+        echo -e "\e[1;33m如发现掉线访问 https://keep.${USERNAME}.serv00.net/start 唤醒, 或者用 https://console.cron-job.org 在线访问网页自动唤醒\n\e[0m"
+        echo -e "\e[1;35m如果需要 Telegram 通知，请先在 Telegram @Botfather 申请 Bot-Token，并带 CHAT_ID 和 BOT_TOKEN 环境变量运行\n\n\e[0m"
     else
-        echo -e "\e[1;91m全自动保活服务安装失败,请删除所有文件夹后重试\n\e[0m"
+        echo -e "\e[1;91m全自动保活服务安装失败, 请删除所有文件夹后重试\n\e[0m"
     fi
 }
 
