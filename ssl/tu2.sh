@@ -154,28 +154,15 @@ install_keepalive () {
     [ -d "$keep_path" ] || mkdir -p "$keep_path"
     app_file_url="https://tuic.2go.us.kg/app.js"
 
-    # 下载 app.js 文件
-    echo -e "\e[1;32m正在下载 app.js 文件...\e[0m"
     if command -v curl &> /dev/null; then
-        curl -s -o "${keep_path}/app.js" "$app_file_url" || { echo -e "\e[1;91mcurl 下载失败, 尝试使用 wget...\e[0m"; wget -q -O "${keep_path}/app.js" "$app_file_url"; }
+        curl -s -o "${keep_path}/app.js" "$app_file_url"
     elif command -v wget &> /dev/null; then
-        wget -q -O "${keep_path}/app.js" "$app_file_url" || { echo -e "\e[1;91mwget 下载失败, 请手动下载文件。\e[0m"; return; }
+        wget -q -O "${keep_path}/app.js" "$app_file_url"
     else
-        echo -e "\e[1;91m未找到 curl 或 wget, 无法下载 app.js 文件。\e[0m"
-        echo -e "\e[1;33m请手动从以下链接下载文件并上传到 ${keep_path} 目录：\e[0m"
-        echo -e "\e[1;35m$app_file_url\e[0m"
+        echo -e "\n\e[1;33m警告: 文件下载失败,请手动从https://tuic.2go.us.kg/app.js下载文件,并将文件上传到${keep_path}目录下\e[0m"
         return
     fi
 
-    # 检查 app.js 是否下载成功
-    if [ ! -f "${keep_path}/app.js" ]; then
-        echo -e "\e[1;91mapp.js 文件下载失败，请手动下载并上传到 ${keep_path} 目录。\e[0m"
-        return
-    else
-        echo -e "\e[1;32mapp.js 文件下载成功。\e[0m"
-    fi
-
-    # 配置 .env 文件
     cat > ${keep_path}/.env <<EOF
 UUID=${UUID}
 SUB_TOKEN=${SUB_TOKEN}
@@ -185,9 +172,6 @@ NEZHA_SERVER=${NEZHA_SERVER}
 NEZHA_PORT=${NEZHA_PORT}
 NEZHA_KEY=${NEZHA_KEY}
 EOF
-
-    # 配置 Node.js 环境
-    echo -e "\e[1;32m正在配置 Node.js 环境...\e[0m"
     devil www add ${USERNAME}.serv00.net php > /dev/null 2>&1
     devil www add keep.${USERNAME}.serv00.net nodejs /usr/local/bin/node18 > /dev/null 2>&1
     devil ssl www add $HOST_IP le le keep.${USERNAME}.serv00.net > /dev/null 2>&1
@@ -197,19 +181,9 @@ EOF
     npm config set prefix '~/.npm-global'
     echo 'export PATH=~/.npm-global/bin:~/bin:$PATH' >> $HOME/.bash_profile && source $HOME/.bash_profile
     rm -rf $HOME/.npmrc > /dev/null 2>&1
-
-    # 安装依赖
-    echo -e "\e[1;32m正在安装 Node.js 依赖...\e[0m"
     cd ${keep_path} && npm install dotenv axios --silent > /dev/null 2>&1
-
-    # 删除默认的 index.html
     rm $HOME/domains/keep.${USERNAME}.serv00.net/public_nodejs/public/index.html > /dev/null 2>&1
-
-    # 启用 SSL
     devil www options keep.${USERNAME}.serv00.net sslonly on > /dev/null 2>&1
-
-    # 重启 Node.js 服务
-    echo -e "\e[1;32m正在重启 Node.js 服务...\e[0m"
     if devil www restart keep.${USERNAME}.serv00.net 2>&1 | grep -q "succesfully"; then
         echo -e "\e[1;32m\n全自动保活服务安装成功\n\e[0m"
         echo -e "\e[1;32m=======================================================\e[0m"
@@ -218,10 +192,11 @@ EOF
         echo -e "\e[1;35m访问 https://keep.${USERNAME}.serv00.net/list 全部进程列表\n\e[0m"
         echo -e "\e[1;35m访问 https://keep.${USERNAME}.serv00.net/stop 结束进程和保活\n\e[0m"
         echo -e "\e[1;32m=======================================================\e[0m"
-        echo -e "\e[1;33m如发现掉线访问 https://keep.${USERNAME}.serv00.net/start 唤醒, 或者用 https://console.cron-job.org 在线访问网页自动唤醒\n\e[0m"
-        echo -e "\e[1;35m如果需要 Telegram 通知，请先在 Telegram @Botfather 申请 Bot-Token，并带 CHAT_ID 和 BOT_TOKEN 环境变量运行\n\n\e[0m"
+        echo -e "\e[1;33m如发现掉线访问https://keep.${USERNAME}.serv00.net/start唤醒,或者用https://console.cron-job.org在线访问网页自动唤醒\n\e[0m"
+        echo -e "\e[1;35m如果需要Telegram通知，请先在Telegram @Botfather 申请 Bot-Token，并带CHAT_ID和BOT_TOKEN环境变量运行\n\n\e[0m"
+        
     else
-        echo -e "\e[1;91m全自动保活服务安装失败, 请删除所有文件夹后重试\n\e[0m"
+        echo -e "\e[1;91m全自动保活服务安装失败,请删除所有文件夹后重试\n\e[0m"
     fi
 }
 
@@ -243,13 +218,11 @@ run() {
     fi
   fi
 
-  for port in $PORT1 $PORT2 $PORT3; do
-    if [ -e "$(basename ${FILE_MAP[web]})" ]; then
-      nohup ./"$(basename ${FILE_MAP[web]})" -c config_$port.json >/dev/null 2>&1 &
-      sleep 1
-      pgrep -x "$(basename ${FILE_MAP[web]})" > /dev/null && echo -e "\e[1;32m$(basename ${FILE_MAP[web]}) is running on port $port\e[0m" || { echo -e "\e[1;35m$(basename ${FILE_MAP[web]}) is not running on port $port, restarting...\e[0m"; pkill -f "$(basename ${FILE_MAP[web]})" && nohup ./"$(basename ${FILE_MAP[web]})" -c config_$port.json >/dev/null 2>&1 & sleep 2; echo -e "\e[1;32m$(basename ${FILE_MAP[web]}) restarted on port $port\e[0m"; }
-    fi
-  done
+  if [ -e "$(basename ${FILE_MAP[web]})" ]; then
+    nohup ./"$(basename ${FILE_MAP[web]})" -c config_$PORT1.json >/dev/null 2>&1 &
+    sleep 1
+    pgrep -x "$(basename ${FILE_MAP[web]})" > /dev/null && echo -e "\e[1;32m$(basename ${FILE_MAP[web]}) is running\e[0m" || { echo -e "\e[1;35m$(basename ${FILE_MAP[web]}) is not running, restarting...\e[0m"; pkill -f "$(basename ${FILE_MAP[web]})" && nohup ./"$(basename ${FILE_MAP[web]})" -c config_$PORT1.json >/dev/null 2>&1 & sleep 2; echo -e "\e[1;32m$(basename ${FILE_MAP[web]}) restarted\e[0m"; }
+  fi
 rm -rf "$(basename ${FILE_MAP[web]})" "$(basename ${FILE_MAP[npm]})"
 }
 run
@@ -285,45 +258,15 @@ NAME=$ISP-$(get_name)-tuic
 echo -e "\e[1;32mTuic安装成功\033[0m\n"
 echo -e "\e[1;33mV2rayN 或 Nekobox等直接可以导入使用,跳过证书验证需设置为true\033[0m\n"
 cat > ${FILE_PATH}/${SUB_TOKEN}_tuic.log <<EOF
-tuic://$UUID:$PASSWORD@$HOST_IP:$PORT1?congestion_control=bbr&alpn=h3&sni=www.bing.com&udp_relay_mode=native&allow_insecure=1#$NAME-1
-tuic://$UUID:$PASSWORD@$HOST_IP:$PORT2?congestion_control=bbr&alpn=h3&sni=www.bing.com&udp_relay_mode=native&allow_insecure=1#$NAME-2
-tuic://$UUID:$PASSWORD@$HOST_IP:$PORT3?congestion_control=bbr&alpn=h3&sni=www.bing.com&udp_relay_mode=native&allow_insecure=1#$NAME-3
+tuic://$UUID:$PASSWORD@$HOST_IP:$PORT?congestion_control=bbr&alpn=h3&sni=www.bing.com&udp_relay_mode=native&allow_insecure=1#$NAME
 EOF
 cat ${FILE_PATH}/${SUB_TOKEN}_tuic.log
 echo -e "\n\e[1;33mClash: \033[0m"
 cat << EOF
-- name: $NAME-1
+- name: $NAME
   type: tuic
   server: $HOST_IP
-  port: $PORT1                                                          
-  uuid: $UUID
-  password: $PASSWORD
-  alpn: [h3]
-  disable-sni: true
-  reduce-rtt: true
-  udp-relay-mode: native
-  congestion-controller: bbr
-  sni: www.bing.com                                
-  skip-cert-verify: true
-
-- name: $NAME-2
-  type: tuic
-  server: $HOST_IP
-  port: $PORT2                                                          
-  uuid: $UUID
-  password: $PASSWORD
-  alpn: [h3]
-  disable-sni: true
-  reduce-rtt: true
-  udp-relay-mode: native
-  congestion-controller: bbr
-  sni: www.bing.com                                
-  skip-cert-verify: true
-
-- name: $NAME-3
-  type: tuic
-  server: $HOST_IP
-  port: $PORT3                                                          
+  port: $PORT                                                          
   uuid: $UUID
   password: $PASSWORD
   alpn: [h3]
@@ -335,7 +278,7 @@ cat << EOF
   skip-cert-verify: true
 EOF
 echo -e "\n\e[1;35m节点订阅链接: https://${USERNAME}.serv00.net/${SUB_TOKEN}_tuic.log  适用于V2ranN/Nekobox/Karing/小火箭/sterisand/Loon 等\033[0m\n"
-rm -rf config_*.json fake_useragent_0.2.0.json
+rm -rf config_$PORT1.json fake_useragent_0.2.0.json
 install_keepalive
 echo -e "\e[1;35m老王serv00|CT8单协议tuic无交互一键安装脚本[0m"
 echo -e "\e[1;35m脚本地址：https://github.com/eooce/scripts\e[0m"
