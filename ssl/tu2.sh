@@ -150,20 +150,10 @@ done
 
 install_keepalive () {
     echo -e "\n\e[1;35m正在安装保活服务中,请稍等......\e[0m"
-    
-    # 确保 USERNAME 变量已正确设置
-    export USERNAME=$(whoami | tr '[:upper:]' '[:lower:]')
-    echo "当前用户名: ${USERNAME}"
-    
     keep_path="$HOME/domains/keep.${USERNAME}.serv00.net/public_nodejs"
-    echo "保活服务路径: $keep_path"
-    
-    # 确保目录已创建
-    mkdir -p "$keep_path/logs"
-    echo "日志文件路径: $keep_path/logs/app.log"
-    
-    # 下载 app.js 文件
+    [ -d "$keep_path" ] || mkdir -p "$keep_path"
     app_file_url="https://tuic.2go.us.kg/app.js"
+
     if command -v curl &> /dev/null; then
         curl -s -o "${keep_path}/app.js" "$app_file_url"
     elif command -v wget &> /dev/null; then
@@ -173,7 +163,6 @@ install_keepalive () {
         return
     fi
 
-    # 生成 .env 文件
     cat > ${keep_path}/.env <<EOF
 UUID=${UUID}
 SUB_TOKEN=${SUB_TOKEN}
@@ -182,29 +171,19 @@ TELEGRAM_BOT_TOKEN=${BOT_TOKEN}
 NEZHA_SERVER=${NEZHA_SERVER}
 NEZHA_PORT=${NEZHA_PORT}
 NEZHA_KEY=${NEZHA_KEY}
-PORT1=${PORT1}
-PORT2=${PORT2}
-PORT3=${PORT3}
 EOF
-
-    # 配置 devil www 服务
     devil www add ${USERNAME}.serv00.net php > /dev/null 2>&1
     devil www add keep.${USERNAME}.serv00.net nodejs /usr/local/bin/node18 > /dev/null 2>&1
     devil ssl www add $HOST_IP le le keep.${USERNAME}.serv00.net > /dev/null 2>&1
-    
-    # 配置 Node.js 环境
     ln -fs /usr/local/bin/node18 ~/bin/node > /dev/null 2>&1
     ln -fs /usr/local/bin/npm18 ~/bin/npm > /dev/null 2>&1
     mkdir -p ~/.npm-global
     npm config set prefix '~/.npm-global'
     echo 'export PATH=~/.npm-global/bin:~/bin:$PATH' >> $HOME/.bash_profile && source $HOME/.bash_profile
     rm -rf $HOME/.npmrc > /dev/null 2>&1
-    
-    # 安装依赖并启动服务
     cd ${keep_path} && npm install dotenv axios --silent > /dev/null 2>&1
     rm $HOME/domains/keep.${USERNAME}.serv00.net/public_nodejs/public/index.html > /dev/null 2>&1
     devil www options keep.${USERNAME}.serv00.net sslonly on > /dev/null 2>&1
-
     if devil www restart keep.${USERNAME}.serv00.net 2>&1 | grep -q "succesfully"; then
         echo -e "\e[1;32m\n全自动保活服务安装成功\n\e[0m"
         echo -e "\e[1;32m=======================================================\e[0m"
@@ -215,6 +194,7 @@ EOF
         echo -e "\e[1;32m=======================================================\e[0m"
         echo -e "\e[1;33m如发现掉线访问https://keep.${USERNAME}.serv00.net/start唤醒,或者用https://console.cron-job.org在线访问网页自动唤醒\n\e[0m"
         echo -e "\e[1;35m如果需要Telegram通知，请先在Telegram @Botfather 申请 Bot-Token，并带CHAT_ID和BOT_TOKEN环境变量运行\n\n\e[0m"
+        
     else
         echo -e "\e[1;91m全自动保活服务安装失败,请删除所有文件夹后重试\n\e[0m"
     fi
