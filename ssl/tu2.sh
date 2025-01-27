@@ -230,42 +230,56 @@ get_ip() {
   IP_LIST=($(devil vhost list | awk '/^[0-9]+/ {print $1}'))
   API_URL="https://status.eooce.com/api"
   IP=""
-  THIRD_IP=${IP_LIST[2]}
-  RESPONSE=$(curl -s --max-time 2 "${API_URL}/${THIRD_IP}")
-  if [[ $(echo "$RESPONSE" | jq -r '.status') == "Available" ]]; then
-      IP=$THIRD_IP
-  else
-      FIRST_IP=${IP_LIST[0]}
-      RESPONSE=$(curl -s --max-time 2 "${API_URL}/${FIRST_IP}")
-      
-      if [[ $(echo "$RESPONSE" | jq -r '.status') == "Available" ]]; then
-          IP=$FIRST_IP
-      else
-          IP=${IP_LIST[1]}
-      fi
+
+  # 获取多个IP，优先选择可用的IP
+  for ip in "${IP_LIST[@]}"; do
+    RESPONSE=$(curl -s --max-time 2 "${API_URL}/${ip}")
+    if [[ $(echo "$RESPONSE" | jq -r '.status') == "Available" ]]; then
+      IP=$ip
+      break
+    fi
+  done
+
+  # 如果没有找到可用的IP，则返回第一个IP
+  if [ -z "$IP" ]; then
+    IP=${IP_LIST[0]}
   fi
-echo "$IP"
+
+  echo "$IP"
 }
 
 HOST_IP=$(get_ip)
 echo -e "\e[1;32m本机IP: $HOST_IP\033[0m"
 
 ISP=$(curl -s --max-time 2 https://speed.cloudflare.com/meta | awk -F\" '{print $26}' | sed -e 's/ /_/g' || echo "0")
-get_name() { if [ "$HOSTNAME" = "s1.ct8.pl" ]; then SERVER="CT8"; else SERVER=$(echo "$HOSTNAME" | cut -d '.' -f 1); fi; echo "$SERVER"; }
+get_name() {
+  if [ "$HOSTNAME" = "s1.ct8.pl" ]; then
+    SERVER="CT8"
+  else
+    SERVER=$(echo "$HOSTNAME" | cut -d '.' -f 1)
+  fi
+  echo "$SERVER"
+}
 NAME=$ISP-$(get_name)-tuic
+
+# 这里PORTS是一个包含多个端口的数组
+PORTS=("PORT1" "PORT2" "PORT3")
 
 echo -e "\e[1;32mTuic安装成功\033[0m\n"
 echo -e "\e[1;33mV2rayN 或 Nekobox等直接可以导入使用,跳过证书验证需设置为true\033[0m\n"
-cat > ${FILE_PATH}/${SUB_TOKEN}_tuic.log <<EOF
+
+# 循环处理每个端口，生成多个订阅链接和配置文件
+for PORT in "${PORTS[@]}"; do
+  cat > ${FILE_PATH}/${SUB_TOKEN}_tuic_$PORT.log <<EOF
 tuic://$UUID:$PASSWORD@$HOST_IP:$PORT?congestion_control=bbr&alpn=h3&sni=www.bing.com&udp_relay_mode=native&allow_insecure=1#$NAME
 EOF
-cat ${FILE_PATH}/${SUB_TOKEN}_tuic.log
-echo -e "\n\e[1;33mClash: \033[0m"
-cat << EOF
+  cat ${FILE_PATH}/${SUB_TOKEN}_tuic_$PORT.log
+  echo -e "\n\e[1;33mClash: \033[0m"
+  cat << EOF
 - name: $NAME
   type: tuic
   server: $HOST_IP
-  port: $PORT                                                          
+  port: $PORT
   uuid: $UUID
   password: $PASSWORD
   alpn: [h3]
@@ -273,12 +287,18 @@ cat << EOF
   reduce-rtt: true
   udp-relay-mode: native
   congestion-controller: bbr
-  sni: www.bing.com                                
+  sni: www.bing.com
   skip-cert-verify: true
 EOF
-echo -e "\n\e[1;35m节点订阅链接: https://${USERNAME}.serv00.net/${SUB_TOKEN}_tuic.log  适用于V2ranN/Nekobox/Karing/小火箭/sterisand/Loon 等\033[0m\n"
+  echo -e "\n\e[1;35m节点订阅链接: https://${USERNAME}.serv00.net/${SUB_TOKEN}_tuic_$PORT.log  适用于V2ranN/Nekobox/Karing/小火箭/sterisand/Loon 等\033[0m\n"
+done
+
+# 删除临时文件
 rm -rf config.json fake_useragent_0.2.0.json
+
+# 安装保活服务
 install_keepalive
+
 echo -e "\e[1;35m老王serv00|CT8单协议tuic无交互一键安装脚本[0m"
 echo -e "\e[1;35m脚本地址：https://github.com/eooce/scripts\e[0m"
 echo -e "\e[1;35m反馈论坛：https://bbs.vps8.me\e[0m"
