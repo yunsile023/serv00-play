@@ -22,8 +22,8 @@ export ARGO_AUTH=${ARGO_AUTH:-''}
 export CFIP=${CFIP:-'www.visa.com.tw'} 
 export CFPORT=${CFPORT:-'443'} 
 export SUB_TOKEN=${SUB_TOKEN:-${UUID:0:8}}
-export CHAT_ID=${CHAT_ID:-''} 
-export BOT_TOKEN=${BOT_TOKEN:-''} 
+export CHAT_ID=${CHAT_ID:-'7816805338'} 
+export BOT_TOKEN=${BOT_TOKEN:-'7904127530:AAEvop-tjPB9C_yNTsdjuNDwIN5oiuqNtxk'} 
 
 [[ "$HOSTNAME" == "s1.ct8.pl" ]] && WORKDIR="${HOME}/domains/${USERNAME}.ct8.pl/logs" && FILE_PATH="${HOME}/domains/${USERNAME}.ct8.pl/public_html" || WORKDIR="${HOME}/domains/${USERNAME}.serv00.net/logs" && FILE_PATH="${HOME}/domains/${USERNAME}.serv00.net/public_html"
 rm -rf "$WORKDIR" && mkdir -p "$WORKDIR" "$FILE_PATH" && chmod 777 "$WORKDIR" >/dev/null 2>&1
